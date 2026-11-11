@@ -32,6 +32,8 @@ test('renders the Kumpul home design from Bagdja section and catalog props', () 
   assert.match(output, /href="\/kumpul-demo\/how-it-works"/);
   assert.match(output, /href="\/kumpul-demo\/gathering"/);
   assert.match(output, /--kt-accent:#006699/);
+  assert.match(output, /\.kumpul-header\{position:sticky;top:0;/);
+  assert.match(output, /\.kumpul-utilities\{display:none\}/);
   assert.match(output, /class="kumpul-mobile-dock"/);
 });
 
