@@ -1,0 +1,114 @@
+{
+  "isPreview": true,
+  "websiteSlug": "/kumpul-demo",
+  "profile": { "name": "Kumpul", "tagline": "Deep Teal • Family Trust" },
+  "templateTheme": {
+    "colors": {
+      "background": "#F0F7F8",
+      "surface": "#FFFFFF",
+      "text": "#0F172A",
+      "textMuted": "#64748B",
+      "accent": "#006699",
+      "accentHover": "#00557A",
+      "border": "#B3D4DD",
+      "success": "#0E9F6E"
+    }
+  },
+  "pages": [
+    { "slug": "home", "title": "Beranda", "isHome": true, "placement": "header" },
+    { "slug": "gathering", "title": "Katalog Gathering", "placement": "header" },
+    { "slug": "about", "title": "Tentang", "placement": "header" },
+    { "slug": "how-it-works", "title": "Cara Kerja", "placement": "header" }
+  ],
+  "sections": [
+    {
+      "id": "kalender-acara",
+      "type": "gathering_calendar",
+      "content": {
+        "title": "Kalender Acara",
+        "preview_month": "2026-12",
+        "preview_plans": [
+          {
+            "id": "plan-family-camp",
+            "title": "Family Camp Lembang",
+            "plan_number": "KMP-2026-041",
+            "status": "PREORDER",
+            "workflow_step_label": "Atur rencana",
+            "event_date": "2026-12-12T08:00:00+07:00",
+            "min_attendees": 10,
+            "max_attendees": 40
+          },
+          {
+            "id": "plan-workshop",
+            "title": "Workshop Keramik & Kopi",
+            "plan_number": "KMP-2026-038",
+            "status": "RSVP_OPEN",
+            "workflow_step_label": "Konfirmasi peserta",
+            "event_date": "2026-12-20T09:00:00+07:00",
+            "min_attendees": 8,
+            "max_attendees": 24
+          },
+          {
+            "id": "plan-trail-run",
+            "title": "Trail Run Sentul — Sunrise Batch",
+            "plan_number": "KMP-2026-035",
+            "status": "PAYMENT_OPEN",
+            "workflow_step_label": "Konfirmasi opsi & pembayaran",
+            "event_date": "2027-01-10T05:30:00+07:00",
+            "payment_deadline": "2026-12-28T23:59:00+07:00",
+            "min_attendees": 12,
+            "max_attendees": 30
+          },
+          {
+            "id": "plan-reading",
+            "title": "Diskusi Buku di Tebet Eco Park",
+            "plan_number": "KMP-2026-031",
+            "status": "CONFIRMED",
+            "workflow_step_label": "Acara dikonfirmasi",
+            "event_date": "2027-01-17T15:00:00+07:00",
+            "min_attendees": 6,
+            "max_attendees": 18
+          }
+        ],
+        "preview_invitations": [
+          {
+            "id": "invite-pottery",
+            "gathering_title": "Workshop Keramik Akhir Tahun",
+            "event_date": "2026-12-06T09:00:00+07:00",
+            "event_location": "Kemang, Jakarta Selatan",
+            "initiator_name": "Alya",
+            "plan_number": "KMP-2026-044",
+            "is_new": true,
+            "needs_action": true,
+            "action_label": "Belum dijawab"
+          },
+          {
+            "id": "invite-family-camp",
+            "gathering_title": "Family Camp: Cerita di Hutan Pinus",
+            "event_date": "2026-12-27T08:00:00+07:00",
+            "event_location": "Lembang, Bandung",
+            "initiator_name": "Raka",
+            "plan_number": "KMP-2026-047",
+            "is_new": false,
+            "needs_action": false,
+            "action_label": "Tiket tersedia"
+          }
+        ]
+      }
+    }
+  ],
+  "products": [],
+  "categories": [],
+  "locations": [],
+  "faqs": [],
+  "auth": {
+    "isLoggedIn": true,
+    "username": "Rini",
+    "calendarHref": "/kumpul-demo/calendar",
+    "cartHref": "/kumpul-demo/cart",
+    "ordersHref": "/kumpul-demo/orders",
+    "tagihanHref": "/kumpul-demo/tagihan",
+    "chatHref": "/kumpul-demo/chat",
+    "profileHref": "/kumpul-demo/profile"
+  }
+}

@@ -44,7 +44,9 @@ passed in renderer props; they do not page through or fetch host data, and do
 not reduce the initial server-rendered response. Product/gathering detail and the
 system pages remain host-managed surfaces under the current external-template
 contract; the template should render only the data and actions the host passes
-to it.
+to it. The local `calendar` fixture is a visual designer preview with mock
+plans and invitations. Its tab and status-filter interactions stay local, and
+its host-owned actions are disabled.
 
 ## Implementation cautions
 

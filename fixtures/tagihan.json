@@ -1,0 +1,118 @@
+{
+  "isPreview": true,
+  "activePageSlug": "tagihan",
+  "websiteSlug": "/kumpul-demo",
+  "profile": { "name": "Kumpul", "tagline": "Deep Teal • Family Trust" },
+  "templateTheme": {
+    "colors": {
+      "background": "#F0F7F8",
+      "surface": "#FFFFFF",
+      "text": "#0F172A",
+      "textMuted": "#64748B",
+      "accent": "#006699",
+      "accentHover": "#00557A",
+      "border": "#B3D4DD",
+      "success": "#0E9F6E"
+    }
+  },
+  "pages": [
+    { "slug": "home", "title": "Beranda", "isHome": true, "placement": "header" },
+    { "slug": "gathering", "title": "Katalog Gathering", "placement": "header" },
+    { "slug": "about", "title": "Tentang", "placement": "header" },
+    { "slug": "how-it-works", "title": "Cara Kerja", "placement": "header" }
+  ],
+  "sections": [],
+  "products": [],
+  "categories": [],
+  "locations": [],
+  "faqs": [],
+  "previewInvoices": [
+    {
+      "id": "termin-family-camp",
+      "kind": "termin",
+      "sequence": 2,
+      "productName": "Family Camp Lembang",
+      "label": "Pelunasan biaya acara",
+      "amount": 750000,
+      "status": "ISSUED",
+      "anchorStepName": "Konfirmasi peserta",
+      "orderId": "ORD-KMP-2026-018",
+      "orderTransactionId": "trx-family-camp",
+      "createdAt": "2026-11-05T10:00:00+07:00",
+      "dueDate": "2026-11-18T23:59:00+07:00"
+    },
+    {
+      "id": "invoice-pottery",
+      "kind": "gathering",
+      "invoice_id": "INV-KMP-2026-044-01",
+      "plan_number": "KMP-2026-044",
+      "gathering_title": "Workshop Keramik Akhir Tahun",
+      "attendee_name": "Rini",
+      "amount": 350000,
+      "payment_status": "PENDING_PAYMENT",
+      "invoice_status": "ISSUED",
+      "invoice_issued_at": "2026-11-08T09:00:00+07:00",
+      "payment_deadline": "2026-11-15T23:59:00+07:00"
+    },
+    {
+      "id": "invoice-reading",
+      "kind": "gathering",
+      "invoice_id": "INV-KMP-2026-031-01",
+      "plan_number": "KMP-2026-031",
+      "gathering_title": "Diskusi Buku di Tebet Eco Park",
+      "attendee_name": "Rini",
+      "amount": 125000,
+      "payment_status": "PENDING_PAYMENT",
+      "invoice_status": "SCHEDULED",
+      "invoice_issued_at": null
+    },
+    {
+      "id": "termin-ceramics",
+      "kind": "termin",
+      "sequence": 1,
+      "productName": "Workshop Keramik Akhir Tahun",
+      "label": "Uang muka",
+      "amount": 200000,
+      "status": "PAID",
+      "anchorStepName": "Pendaftaran peserta",
+      "orderId": "ORD-KMP-2026-014",
+      "orderTransactionId": "trx-ceramics",
+      "createdAt": "2026-10-28T15:00:00+07:00"
+    },
+    {
+      "id": "invoice-trail-run",
+      "kind": "gathering",
+      "invoice_id": "INV-KMP-2026-035-01",
+      "plan_number": "KMP-2026-035",
+      "gathering_title": "Trail Run Sentul — Sunrise Batch",
+      "attendee_name": "Rini",
+      "amount": 275000,
+      "payment_status": "REFUNDED",
+      "invoice_status": "ISSUED",
+      "invoice_issued_at": "2026-10-15T12:00:00+07:00"
+    },
+    {
+      "id": "termin-cancelled",
+      "kind": "termin",
+      "sequence": 1,
+      "productName": "Piknik Komunitas",
+      "label": "Uang muka acara",
+      "amount": 100000,
+      "status": "CANCELLED",
+      "anchorStepName": null,
+      "orderId": "ORD-KMP-2026-009",
+      "orderTransactionId": "trx-picnic",
+      "createdAt": "2026-10-01T10:00:00+07:00"
+    }
+  ],
+  "auth": {
+    "isLoggedIn": true,
+    "username": "Rini",
+    "calendarHref": "/kumpul-demo/calendar",
+    "cartHref": "/kumpul-demo/cart",
+    "ordersHref": "/kumpul-demo/orders",
+    "tagihanHref": "/kumpul-demo/tagihan",
+    "chatHref": "/kumpul-demo/chat",
+    "profileHref": "/kumpul-demo/profile"
+  }
+}

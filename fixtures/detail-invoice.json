@@ -1,0 +1,43 @@
+{
+  "isPreview": true,
+  "activePageSlug": "invoice-detail",
+  "websiteSlug": "/kumpul-demo",
+  "profile": { "name": "Kumpul", "tagline": "Deep Teal • Family Trust" },
+  "templateTheme": {
+    "colors": {
+      "background": "#F0F7F8",
+      "surface": "#FFFFFF",
+      "text": "#0F172A",
+      "textMuted": "#64748B",
+      "accent": "#006699",
+      "accentHover": "#00557A",
+      "border": "#B3D4DD",
+      "success": "#0E9F6E"
+    }
+  },
+  "pages": [],
+  "sections": [],
+  "products": [],
+  "categories": [],
+  "locations": [],
+  "faqs": [],
+  "previewInvoice": {
+    "invoice_id": "INV-KMP-2026-044-01",
+    "plan_number": "KMP-2026-044",
+    "gathering_title": "Workshop Keramik Akhir Tahun",
+    "attendee_name": "Rini",
+    "initiator_name": "Dita Prameswari",
+    "amount": 350000,
+    "currency": "IDR",
+    "payment_status": "UNPAID",
+    "payment_open": true,
+    "payment_deadline": "2026-11-15T23:59:00+07:00",
+    "event_date": "2026-11-22"
+  },
+  "auth": {
+    "isLoggedIn": true,
+    "username": "Rini",
+    "ordersHref": "/kumpul-demo/orders",
+    "tagihanHref": "/kumpul-demo/tagihan"
+  }
+}

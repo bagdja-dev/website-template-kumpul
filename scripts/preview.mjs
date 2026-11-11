@@ -3,6 +3,7 @@ import { createServer } from 'node:http';
 import { createRequire } from 'node:module';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
+import { build } from 'esbuild';
 
 const root = process.cwd();
 const fixturesDirectory = resolve(root, 'fixtures');
@@ -18,6 +19,18 @@ const templateName = manifest.slug
 const port = Number(process.env.PORT || 4173);
 const clients = new Set();
 let refreshTimer;
+
+async function buildClient() {
+  await build({
+    entryPoints: [resolve(root, 'src/client.js')],
+    outfile: resolve(root, 'dist/client.js'),
+    bundle: true,
+    platform: 'browser',
+    format: 'iife',
+  });
+}
+
+await buildClient();
 
 class FixtureError extends Error {
   constructor(message, statusCode) {
@@ -118,7 +131,7 @@ const server = createServer(async (request, response) => {
     } else if (url.pathname === '/render') {
       send(response, 200, 'text/html', await renderFixture(url.searchParams.get('fixture') || 'home'));
     } else if (url.pathname === '/client.js') {
-      send(response, 200, 'text/javascript', await readFile(resolve(root, 'src/client.js'), 'utf8'));
+      send(response, 200, 'text/javascript', await readFile(resolve(root, 'dist/client.js'), 'utf8'));
     } else if (url.pathname === '/events') {
       response.writeHead(200, {
         'content-type': 'text/event-stream',
@@ -142,6 +155,9 @@ for (const directory of [resolve(root, 'src'), fixturesDirectory]) {
   (async () => {
     for await (const event of watcher) {
       if (event.filename?.toString().startsWith('.')) continue;
+      if (directory === resolve(root, 'src') && event.filename?.toString() === 'client.js') {
+        await buildClient();
+      }
       clearTimeout(refreshTimer);
       refreshTimer = setTimeout(() => {
         for (const client of clients) client.write('event: change\ndata: updated\n\n');
@@ -155,5 +171,5 @@ for (const directory of [resolve(root, 'src'), fixturesDirectory]) {
 server.listen(port, '127.0.0.1', () => {
   console.log(`${templateName} local preview: http://127.0.0.1:${port}`);
   console.log('Edit files in src/ or fixtures/ to refresh the preview.');
-  console.log('The local catalog filter runs only on fixture props; no platform APIs or actions are available.');
+  console.log('Local catalog, calendar, billing, transaction, and cart interactions use fixture props only; no platform APIs or host actions are available.');
 });

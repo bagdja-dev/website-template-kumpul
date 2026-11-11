@@ -1,0 +1,71 @@
+{
+  "isPreview": true,
+  "activePageSlug": "transaction-detail",
+  "websiteSlug": "/kumpul-demo",
+  "profile": { "name": "Kumpul", "tagline": "Deep Teal • Family Trust" },
+  "templateTheme": {
+    "colors": {
+      "background": "#F0F7F8",
+      "surface": "#FFFFFF",
+      "text": "#0F172A",
+      "textMuted": "#64748B",
+      "accent": "#006699",
+      "accentHover": "#00557A",
+      "border": "#B3D4DD",
+      "success": "#0E9F6E"
+    }
+  },
+  "pages": [],
+  "sections": [],
+  "products": [],
+  "categories": [],
+  "locations": [],
+  "faqs": [],
+  "previewTransaction": {
+    "id": "trx-family-camp",
+    "ref_number": "INV-KMP-2026-018",
+    "status": "PENDING_PAYMENT",
+    "created_at": "2026-11-08T10:00:00+07:00",
+    "total_amount": 1350000,
+    "payment_mode": "ESCROW",
+    "escrow_id": "ESC-KMP-018",
+    "shipping_cost": 50000,
+    "recipient_name": "Rini Saputri",
+    "phone": "+62 812-3456-7890",
+    "address": "Jl. Melati No. 8",
+    "district": "Cidadap",
+    "city": "Bandung",
+    "postal_code": "40142",
+    "metadata": {
+      "shipping": {
+        "courier_code": "JNE",
+        "courier_service_name": "REG",
+        "destination_area_name": "Cidadap, Bandung"
+      }
+    },
+    "items": [
+      {
+        "id": "item-camp-seat",
+        "quantity": 2,
+        "unit_price": 500000,
+        "total_amount": 1000000,
+        "product_name": "Family Camp Lembang",
+        "emoji": "🏕"
+      },
+      {
+        "id": "item-camp-meal",
+        "quantity": 1,
+        "unit_price": 300000,
+        "total_amount": 300000,
+        "product_name": "Paket makan keluarga",
+        "emoji": "🍱"
+      }
+    ]
+  },
+  "auth": {
+    "isLoggedIn": true,
+    "username": "Rini",
+    "ordersHref": "/kumpul-demo/orders",
+    "tagihanHref": "/kumpul-demo/tagihan"
+  }
+}

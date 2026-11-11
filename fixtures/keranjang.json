@@ -1,0 +1,77 @@
+{
+  "isPreview": true,
+  "activePageSlug": "cart",
+  "websiteSlug": "/kumpul-demo",
+  "profile": { "name": "Kumpul", "tagline": "Deep Teal • Family Trust" },
+  "templateTheme": {
+    "colors": {
+      "background": "#F0F7F8",
+      "surface": "#FFFFFF",
+      "text": "#0F172A",
+      "textMuted": "#64748B",
+      "accent": "#006699",
+      "accentHover": "#00557A",
+      "border": "#B3D4DD",
+      "success": "#0E9F6E"
+    }
+  },
+  "pages": [
+    { "slug": "home", "title": "Beranda", "isHome": true, "placement": "header" },
+    { "slug": "gathering", "title": "Katalog Gathering", "placement": "header" },
+    { "slug": "about", "title": "Tentang", "placement": "header" },
+    { "slug": "how-it-works", "title": "Cara Kerja", "placement": "header" }
+  ],
+  "sections": [],
+  "products": [],
+  "categories": [],
+  "locations": [],
+  "faqs": [],
+  "previewCart": [
+    {
+      "id": "cart-family-camp",
+      "kind": "seat",
+      "name": "Family Camp Lembang",
+      "category": "Gathering keluarga",
+      "subtitle": "12 Desember 2026 · Lembang, Bandung",
+      "variant": "Tiket keluarga · 2 peserta",
+      "emoji": "⌂",
+      "price": 450000,
+      "quantity": 2
+    },
+    {
+      "id": "cart-ceramics",
+      "kind": "seat",
+      "name": "Workshop Keramik Akhir Tahun",
+      "category": "Kelas & workshop",
+      "subtitle": "20 Desember 2026 · Kemang, Jakarta",
+      "variant": "Tiket reguler",
+      "emoji": "◉",
+      "price": 250000,
+      "quantity": 1,
+      "can_checkout": false,
+      "blocked_reason": "Menunggu penawaran"
+    },
+    {
+      "id": "cart-plan",
+      "kind": "gathering_plan",
+      "name": "Rencana piknik keluarga",
+      "category": "Rencana gathering",
+      "subtitle": "Rencana Anda tersimpan di Kalender",
+      "emoji": "◷",
+      "price": 0,
+      "quantity": 1,
+      "can_checkout": false,
+      "blocked_reason": "Rencana gathering belum masuk tahap pembayaran"
+    }
+  ],
+  "auth": {
+    "isLoggedIn": true,
+    "username": "Rini",
+    "calendarHref": "/kumpul-demo/calendar",
+    "cartHref": "/kumpul-demo/cart",
+    "ordersHref": "/kumpul-demo/orders",
+    "tagihanHref": "/kumpul-demo/tagihan",
+    "chatHref": "/kumpul-demo/chat",
+    "profileHref": "/kumpul-demo/profile"
+  }
+}

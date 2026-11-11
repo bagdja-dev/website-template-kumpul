@@ -1,0 +1,89 @@
+{
+  "isPreview": true,
+  "activePageSlug": "orders",
+  "websiteSlug": "/kumpul-demo",
+  "profile": { "name": "Kumpul", "tagline": "Deep Teal • Family Trust" },
+  "templateTheme": {
+    "colors": {
+      "background": "#F0F7F8",
+      "surface": "#FFFFFF",
+      "text": "#0F172A",
+      "textMuted": "#64748B",
+      "accent": "#006699",
+      "accentHover": "#00557A",
+      "border": "#B3D4DD",
+      "success": "#0E9F6E"
+    }
+  },
+  "pages": [
+    { "slug": "home", "title": "Beranda", "isHome": true, "placement": "header" },
+    { "slug": "gathering", "title": "Katalog Gathering", "placement": "header" },
+    { "slug": "about", "title": "Tentang", "placement": "header" },
+    { "slug": "how-it-works", "title": "Cara Kerja", "placement": "header" }
+  ],
+  "sections": [],
+  "products": [],
+  "categories": [],
+  "locations": [],
+  "faqs": [],
+  "previewTransactions": [
+    {
+      "id": "trx-family-camp",
+      "ref_number": "INV-KMP-2026-018",
+      "status": "PENDING_PAYMENT",
+      "created_at": "2026-11-08T10:00:00+07:00",
+      "total_amount": 1250000,
+      "item_count": 2,
+      "has_outstanding_invoice": true,
+      "outstanding_label": "Menunggu pelunasan",
+      "items": [
+        { "product_name": "Family Camp Lembang" },
+        { "product_name": "Paket makan keluarga" }
+      ]
+    },
+    {
+      "id": "trx-pottery",
+      "ref_number": "INV-KMP-2026-014",
+      "status": "HELD",
+      "created_at": "2026-11-04T15:00:00+07:00",
+      "total_amount": 350000,
+      "courier": null,
+      "item_count": 1,
+      "items": [
+        { "product_name": "Workshop Keramik Akhir Tahun" }
+      ]
+    },
+    {
+      "id": "trx-book-club",
+      "ref_number": "INV-KMP-2026-010",
+      "status": "COMPLETED",
+      "created_at": "2026-10-28T09:30:00+07:00",
+      "total_amount": 125000,
+      "item_count": 1,
+      "items": [
+        { "product_name": "Diskusi Buku di Tebet Eco Park" }
+      ]
+    },
+    {
+      "id": "trx-cancelled",
+      "ref_number": "INV-KMP-2026-007",
+      "status": "CANCELLED",
+      "created_at": "2026-10-15T12:00:00+07:00",
+      "total_amount": 200000,
+      "item_count": 1,
+      "items": [
+        { "product_name": "Piknik Komunitas" }
+      ]
+    }
+  ],
+  "auth": {
+    "isLoggedIn": true,
+    "username": "Rini",
+    "calendarHref": "/kumpul-demo/calendar",
+    "cartHref": "/kumpul-demo/cart",
+    "ordersHref": "/kumpul-demo/orders",
+    "tagihanHref": "/kumpul-demo/tagihan",
+    "chatHref": "/kumpul-demo/chat",
+    "profileHref": "/kumpul-demo/profile"
+  }
+}

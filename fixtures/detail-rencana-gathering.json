@@ -1,0 +1,83 @@
+{
+  "isPreview": true,
+  "activePageSlug": "plan-detail",
+  "websiteSlug": "/kumpul-demo",
+  "profile": { "name": "Kumpul", "tagline": "Deep Teal • Family Trust" },
+  "templateTheme": {
+    "colors": {
+      "background": "#F0F7F8",
+      "surface": "#FFFFFF",
+      "text": "#0F172A",
+      "textMuted": "#64748B",
+      "accent": "#006699",
+      "accentHover": "#00557A",
+      "border": "#B3D4DD",
+      "success": "#0E9F6E"
+    }
+  },
+  "pages": [],
+  "sections": [],
+  "products": [],
+  "categories": [],
+  "locations": [],
+  "faqs": [],
+  "previewGatheringPlan": {
+    "id": "plan-workshop",
+    "plan_number": "KMP-2026-038",
+    "order_id": "ORD-KMP-2026-038",
+    "title": "Workshop Keramik",
+    "status": "PREORDER",
+    "workflow_step": "PLAN",
+    "invite_policy": "OPEN",
+    "occurrence": {
+      "status": "RSVP_OPEN",
+      "price_per_seat": 425000,
+      "currency": "IDR",
+      "deposit_amount_per_seat": 125000,
+      "min_attendees": 3,
+      "max_attendees": 24,
+      "rsvp_close_at": "2026-12-10T23:59:00+07:00",
+      "payment_deadline": "2026-12-15T23:59:00+07:00",
+      "final_schedule": "2026-12-20T09:00:00+07:00",
+      "final_location": "Kemang, Jakarta Selatan",
+      "option_groups_snapshot": [
+        {
+          "product_option_id": "opt-session-morning",
+          "option_group_key": "Sesi",
+          "option_key": "pagi",
+          "label": "Sesi pagi",
+          "description": "Workshop membuat mug untuk pemula.",
+          "venue_location": "Studio Tanah, Kemang",
+          "is_final_selection": false
+        },
+        {
+          "product_option_id": "opt-session-afternoon",
+          "option_group_key": "Sesi",
+          "option_key": "siang",
+          "label": "Sesi siang",
+          "description": "Workshop membuat keramik untuk pemula.",
+          "venue_location": "Studio Tanah, Kemang",
+          "is_final_selection": false
+        }
+      ],
+      "opened_option_ids_snapshot": [
+        "opt-session-morning",
+        "opt-session-afternoon"
+      ],
+      "voting_results": {}
+    }
+  },
+  "previewPlanInvitees": [
+    { "name": "Dewi Anggraini", "email": "dewi@example.test", "rsvp_status": "ACCEPTED" },
+    { "name": "Bima Pratama", "email": "bima@example.test", "rsvp_status": "ACCEPTED" },
+    { "name": "Sari Wulandari", "email": "sari@example.test", "rsvp_status": "ACCEPTED" }
+  ],
+  "auth": {
+    "isLoggedIn": true,
+    "username": "Rini",
+    "cartHref": "/kumpul-demo/cart",
+    "calendarHref": "/kumpul-demo/calendar",
+    "ordersHref": "/kumpul-demo/orders",
+    "tagihanHref": "/kumpul-demo/tagihan"
+  }
+}
