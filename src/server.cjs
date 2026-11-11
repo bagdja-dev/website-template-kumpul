@@ -579,7 +579,7 @@ function GatheringPlanSimulator({ plan, props }) {
     ),
     h('span', { className: 'kumpul-plan-simulation-badge' }, 'Lokal · tanpa API'),
   ),
-  h('style', null, '.kumpul-plan-sim-form.kumpul-plan-sim-dates{grid-template-columns:repeat(3,minmax(0,1fr))}.kumpul-plan-sim-date-time{display:grid;grid-template-columns:minmax(0,1fr) 92px;gap:6px}.kumpul-plan-sim-options .kumpul-plan-sim-option{width:100%;margin:7px 0;display:flex;align-items:flex-start}.kumpul-plan-sim-option>span{display:grid;gap:3px}.kumpul-plan-sim-option small{color:var(--kt-muted);font-size:8px;font-weight:400;line-height:1.45}.kumpul-plan-sim-invite-form{grid-template-columns:repeat(3,minmax(0,1fr)) auto}.kumpul-plan-sim-invitees li>div{grid-template-columns:repeat(3,minmax(0,1fr))}@media(max-width:760px){.kumpul-plan-sim-form.kumpul-plan-sim-dates{grid-template-columns:1fr}.kumpul-plan-sim-invite-form{grid-template-columns:1fr}.kumpul-plan-sim-invitees li>div{grid-template-columns:1fr}}'),
+  h('style', null, '.kumpul-plan-sim-steps{position:sticky;top:var(--kumpul-header-height,0px);z-index:8;padding-top:10px;background:var(--kt-surface)}.kumpul-plan-sim-form.kumpul-plan-sim-dates{grid-template-columns:repeat(3,minmax(0,1fr))}.kumpul-plan-sim-date-time{display:grid;grid-template-columns:minmax(0,1fr) 92px;gap:6px}.kumpul-plan-sim-options .kumpul-plan-sim-option{width:100%;margin:7px 0;display:flex;align-items:flex-start}.kumpul-plan-sim-option>span{display:grid;gap:3px}.kumpul-plan-sim-option small{color:var(--kt-muted);font-size:8px;font-weight:400;line-height:1.45}.kumpul-plan-sim-invite-form{grid-template-columns:repeat(3,minmax(0,1fr)) auto}.kumpul-plan-sim-invitees li>div{grid-template-columns:repeat(3,minmax(0,1fr))}@media(max-width:760px){.kumpul-plan-sim-form.kumpul-plan-sim-dates{grid-template-columns:1fr}.kumpul-plan-sim-invite-form{grid-template-columns:1fr}.kumpul-plan-sim-invitees li>div{grid-template-columns:1fr}}'),
   h('p', { className: 'kumpul-plan-simulation-note', role: 'note' },
     'Semua perubahan hanya tersimpan sementara di halaman preview ini. Tidak ada undangan terkirim, pembayaran diproses, atau data akun yang diubah. Muat ulang untuk mengulang simulasi.',
   ),
@@ -1116,17 +1116,19 @@ function Header(props) {
           : null,
       ),
     ),
-    h('nav', { className: 'kumpul-page-nav', 'aria-label': 'Navigasi halaman' },
-      ...pages.map((page) =>
-        h('a', {
-          href: tenantPath(props, page.isHome ? '/' : `/${encodeURIComponent(page.slug)}`),
-          key: page.slug,
-          'aria-current': activePage
-            ? page.slug === activePage.slug ? 'page' : undefined
-            : props.activePageSlug ? undefined : page.isHome ? 'page' : undefined,
-        }, page.title),
-      ),
-    ),
+    pages.length
+      ? h('nav', { className: 'kumpul-page-nav', 'aria-label': 'Navigasi halaman' },
+        ...pages.map((page) =>
+          h('a', {
+            href: tenantPath(props, page.isHome ? '/' : `/${encodeURIComponent(page.slug)}`),
+            key: page.slug,
+            'aria-current': activePage
+              ? page.slug === activePage.slug ? 'page' : undefined
+              : props.activePageSlug ? undefined : page.isHome ? 'page' : undefined,
+          }, page.title),
+        ),
+      )
+      : null,
   );
 }
 

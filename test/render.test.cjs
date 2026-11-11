@@ -232,11 +232,13 @@ test('renders gathering plan detail and the full preview-only workflow simulator
   const output = html(fixture('detail-rencana-gathering'));
 
   assert.match(output, /data-plan-detail/);
+  assert.doesNotMatch(output, /class="kumpul-page-nav"/);
   assert.match(output, /data-plan-simulator/);
   assert.match(output, /data-current-step="PLAN"/);
   assert.equal(Array.from(output.matchAll(/data-sim-step="/g)).length, 4);
   assert.doesNotMatch(output, /class="kumpul-plan-workflow"/);
   assert.match(output, /data-sim-panel="PLAN"/);
+  assert.match(output, /\.kumpul-plan-sim-steps\{position:sticky;top:var\(--kumpul-header-height,0px\)/);
   assert.match(output, /data-sim-panel="INVITATIONS" hidden=""/);
   assert.match(output, /data-sim-panel="INVITATION_CONFIRMATION" hidden=""/);
   assert.match(output, /data-sim-panel="PAYMENT_CONFIRMATION" hidden=""/);

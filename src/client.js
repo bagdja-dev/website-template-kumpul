@@ -1,6 +1,19 @@
 import QRCode from 'qrcode';
 
 (() => {
+  const header = document.querySelector('.kumpul-header');
+  if (header) {
+    const updateHeaderHeight = () => {
+      document.documentElement.style.setProperty('--kumpul-header-height', `${header.getBoundingClientRect().height}px`);
+    };
+    updateHeaderHeight();
+    if (typeof ResizeObserver === 'function') {
+      new ResizeObserver(updateHeaderHeight).observe(header);
+    } else {
+      window.addEventListener('resize', updateHeaderHeight);
+    }
+  }
+
   document.querySelectorAll('[data-calendar-page]').forEach((calendar) => {
     const tabs = Array.from(calendar.querySelectorAll('[data-calendar-tab]'));
     const panels = Array.from(calendar.querySelectorAll('[data-calendar-panel]'));
