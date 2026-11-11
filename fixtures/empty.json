@@ -1,0 +1,32 @@
+{
+  "isPreview": true,
+  "websiteSlug": "/kumpul-demo",
+  "profile": {},
+  "templateTheme": {
+    "colors": {
+      "background": "#F0F7F8",
+      "surface": "#FFFFFF",
+      "text": "#0F172A",
+      "textMuted": "#64748B",
+      "accent": "#006699",
+      "accentHover": "#00557A",
+      "border": "#B3D4DD",
+      "success": "#0E9F6E"
+    }
+  },
+  "websiteTheme": {},
+  "pages": [],
+  "sections": [
+    { "id": "hero", "type": "hero", "content": { "headline": "Kumpul bareng jadi lebih mudah." } },
+    { "id": "flow", "type": "features_grid", "content": { "title": "Dari ide sampai absensi, rapi.", "features": [] } },
+    { "id": "gatherings", "type": "products_grid", "content": { "title": "Gathering Terdekat", "filter_type": "gathering" } },
+    { "id": "testimonials", "type": "testimonial", "content": { "title": "Cerita komunitas", "items": [] } },
+    { "id": "locations", "type": "locations_list", "content": { "title": "Lokasi Kumpul" } },
+    { "id": "cta", "type": "cta", "content": { "title": "Siap bikin gathering pertamamu?" } }
+  ],
+  "products": [],
+  "categories": [],
+  "locations": [],
+  "faqs": [],
+  "blogPosts": []
+}

@@ -1,0 +1,122 @@
+{
+  "isPreview": true,
+  "websiteSlug": "/kumpul-demo",
+  "profile": {
+    "name": "Kumpul",
+    "tagline": "Deep Teal • Family Trust"
+  },
+  "templateTheme": {
+    "colors": {
+      "background": "#F0F7F8",
+      "surface": "#FFFFFF",
+      "text": "#0F172A",
+      "textMuted": "#64748B",
+      "accent": "#006699",
+      "accentHover": "#00557A",
+      "border": "#B3D4DD",
+      "success": "#0E9F6E"
+    }
+  },
+  "websiteTheme": {},
+  "pages": [
+    { "slug": "home", "title": "Beranda", "isHome": true, "placement": "header" },
+    { "slug": "gathering", "title": "Katalog Gathering", "placement": "header" },
+    { "slug": "about", "title": "Tentang", "placement": "header" },
+    { "slug": "how-it-works", "title": "Cara Kerja", "placement": "header" },
+    { "slug": "detail-gathering", "title": "Detail Gathering", "placement": "header" }
+  ],
+  "sections": [
+    {
+      "id": "hero",
+      "type": "hero",
+      "content": {
+        "subtitle": "Komunitas aktif • saatnya berkumpul",
+        "headline": "Kumpul bareng jadi lebih mudah.",
+        "lede": "Platform gathering untuk keluarga, workshop, dan komunitas. Dari perencanaan hingga hari acara, semua dalam satu alur.",
+        "stats": [
+          { "value": "1.2K+", "label": "Peserta komunitas" },
+          { "value": "48", "label": "Event aktif" },
+          { "value": "4.9/5", "label": "Rating komunitas" }
+        ]
+      }
+    },
+    {
+      "id": "flow",
+      "type": "features_grid",
+      "content": {
+        "title": "Dari ide sampai absensi, rapi.",
+        "subtitle": "Alur acara yang jelas dari persiapan sampai hari berkumpul.",
+        "features": [
+          { "icon": "1", "title": "Perencanaan", "desc": "Tentukan tema & lokasi" },
+          { "icon": "2", "title": "Buka pendaftaran", "desc": "Form dibuka untuk umum" },
+          { "icon": "3", "title": "Buka pembayaran", "desc": "Termin & tagihan otomatis" },
+          { "icon": "4", "title": "Konfirmasi", "desc": "Verifikasi peserta" },
+          { "icon": "5", "title": "Absensi", "desc": "Check-in QR saat gathering" }
+        ]
+      }
+    },
+    {
+      "id": "gatherings",
+      "type": "products_grid",
+      "content": {
+        "title": "Gathering Terdekat",
+        "subtitle": "Pilih pengalaman berikutnya bersama keluarga dan komunitas.",
+        "filter_type": "gathering"
+      }
+    },
+    {
+      "id": "testimonials",
+      "type": "testimonial",
+      "content": {
+        "title": "Komunitas yang balik lagi.",
+        "subtitle": "Cerita peserta dari acara yang mereka ikuti.",
+        "items": [
+          { "quote": "Anak-anak happy, panitia rapi banget. Pembayaran termin sangat membantu.", "context": "Family Camp Lembang", "location": "Rini & Keluarga" },
+          { "quote": "Flow-nya jelas. Dari daftar sampai check-in semuanya terasa mudah.", "context": "Trail Run Sentul", "location": "Dimas Pratama" },
+          { "quote": "Tempatnya nyaman dan materinya menarik. Suka pengingat lewat kalender.", "context": "Workshop Keramik", "location": "Sasha" }
+        ]
+      }
+    },
+    {
+      "id": "locations",
+      "type": "locations_list",
+      "content": {
+        "title": "Lokasi Kumpul",
+        "subtitle": "Tempat pilihan komunitas untuk bertemu dan berbagi cerita."
+      }
+    },
+    {
+      "id": "cta",
+      "type": "cta",
+      "content": {
+        "title": "Siap bikin gathering pertamamu?",
+        "subtitle": "Rencanakan acara, undang komunitas, dan nikmati momen bersama.",
+        "button_text": "Jelajahi gathering",
+        "button_action": "link",
+        "button_url": "/gathering"
+      }
+    }
+  ],
+  "products": [
+    { "id": "family-camp", "name": "Family Camp Lembang — Edisi Libur Sekolah", "slug": "family-camp-lembang", "description": "Gathering keluarga untuk menikmati waktu bersama di alam terbuka.", "priceLabel": "Rp 350K / keluarga", "type": "gathering", "category": "Family" },
+    { "id": "ceramic-workshop", "name": "Workshop Keramik & Kopi Slow Bar", "slug": "workshop-keramik", "description": "Belajar membuat keramik sambil menikmati kopi pilihan.", "priceLabel": "Rp 185K / orang", "type": "gathering", "category": "Workshop" },
+    { "id": "trail-run", "name": "Trail Run Sentul — Sunrise Batch", "slug": "trail-run-sentul", "description": "Mulai pagi dengan rute lari dan pemandangan perbukitan.", "priceLabel": "Rp 125K / tiket", "type": "gathering", "category": "Outdoor" },
+    { "id": "community-reading", "name": "Komunitas Baca: Diskusi Sore di Taman", "slug": "komunitas-baca", "description": "Sesi baca dan diskusi santai terbuka untuk semua.", "priceLabel": "Gratis — RSVP", "type": "gathering", "category": "Komunitas" }
+  ],
+  "locations": [
+    { "id": "tebet", "name": "Tebet Eco Park", "city": "Jakarta Selatan" },
+    { "id": "lembang", "name": "Lembang Park", "city": "Bandung" },
+    { "id": "sentul", "name": "Sentul Highlands", "city": "Bogor" },
+    { "id": "kemang", "name": "Kemang Village", "city": "Jakarta Selatan" }
+  ],
+  "auth": {
+    "isLoggedIn": true,
+    "username": "Rini",
+    "cartHref": "/kumpul-demo/cart",
+    "ordersHref": "/kumpul-demo/orders",
+    "tagihanHref": "/kumpul-demo/tagihan",
+    "calendarHref": "/kumpul-demo/calendar",
+    "chatHref": "/kumpul-demo/chat",
+    "profileHref": "/kumpul-demo/profile"
+  }
+}

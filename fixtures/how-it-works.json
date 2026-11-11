@@ -1,0 +1,76 @@
+{
+  "isPreview": true,
+  "websiteSlug": "/kumpul-demo",
+  "profile": { "name": "Kumpul", "tagline": "Deep Teal • Family Trust" },
+  "templateTheme": {
+    "colors": {
+      "background": "#F0F7F8",
+      "surface": "#FFFFFF",
+      "text": "#0F172A",
+      "textMuted": "#64748B",
+      "accent": "#006699",
+      "accentHover": "#00557A",
+      "border": "#B3D4DD",
+      "success": "#0E9F6E"
+    }
+  },
+  "pages": [
+    { "slug": "home", "title": "Beranda", "isHome": true, "placement": "header" },
+    { "slug": "gathering", "title": "Katalog Gathering", "placement": "header" },
+    { "slug": "about", "title": "Tentang", "placement": "header" },
+    { "slug": "how-it-works", "title": "Cara Kerja", "placement": "header" }
+  ],
+  "sections": [
+    {
+      "id": "cara-kerja-kumpul",
+      "type": "service_process_section",
+      "content": {
+        "title": "5 langkah, gathering jalan. Tanpa drama WA.",
+        "subtitle": "Alur yang jelas membantu panitia dan peserta menikmati setiap momen.",
+        "flow_id": "gathering-flow",
+        "flow_steps": [
+          { "sequence": 1, "status_name": "Perencanaan", "description": "Tentukan tema, jadwal, lokasi, dan kebutuhan acara.", "process_day": 1 },
+          { "sequence": 2, "status_name": "Buka pendaftaran", "description": "Bagikan informasi acara dan kumpulkan data peserta.", "process_day": 1 },
+          { "sequence": 3, "status_name": "Pembayaran", "description": "Peserta melihat tagihan dan informasi pembayaran acara.", "process_day": 2 },
+          { "sequence": 4, "status_name": "Konfirmasi", "description": "Panitia memantau data dan kesiapan peserta.", "process_day": 3 },
+          { "sequence": 5, "status_name": "Hari gathering", "description": "Gunakan daftar peserta untuk membantu proses check-in.", "process_day": 7 }
+        ]
+      }
+    },
+    {
+      "id": "faq-gathering",
+      "type": "faq_list",
+      "content": { "title": "Pertanyaan tentang gathering", "source": "faqs" }
+    }
+  ],
+  "products": [],
+  "categories": [],
+  "locations": [],
+  "faqs": [
+    {
+      "id": "faq-termin",
+      "question": "Apakah peserta bisa membayar dengan termin?",
+      "answer": "Opsi pembayaran mengikuti pengaturan yang ditentukan penyelenggara untuk masing-masing gathering.",
+      "category": "gathering"
+    },
+    {
+      "id": "faq-cancel",
+      "question": "Bagaimana jika peserta membatalkan keikutsertaan?",
+      "answer": "Kebijakan pembatalan dapat dilihat pada informasi gathering. Hubungi penyelenggara bila membutuhkan bantuan.",
+      "category": "gathering"
+    },
+    {
+      "id": "faq-whatsapp",
+      "question": "Apakah semua peserta harus bergabung ke grup WhatsApp?",
+      "answer": "Informasi komunikasi peserta mengikuti pengaturan dan instruksi dari penyelenggara.",
+      "category": "gathering"
+    },
+    {
+      "id": "faq-family",
+      "question": "Apakah anak dihitung sebagai peserta?",
+      "answer": "Ketentuan peserta, termasuk untuk anak, tercantum di detail masing-masing gathering.",
+      "category": "gathering"
+    }
+  ],
+  "auth": { "isLoggedIn": false, "loginHref": "/kumpul-demo/login" }
+}

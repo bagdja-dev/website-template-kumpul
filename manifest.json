@@ -1,0 +1,23 @@
+{
+  "slug": "kumpul",
+  "version": "1.0.0",
+  "rendererApiVersion": 1,
+  "sections": [
+    "hero",
+    "about",
+    "gallery",
+    "features_grid",
+    "products_grid",
+    "service_process_section",
+    "faq_list",
+    "testimonial",
+    "locations_list",
+    "cta"
+  ],
+  "capabilities": [
+    "server_render",
+    "preview",
+    "catalog_read",
+    "client_bundle"
+  ]
+}

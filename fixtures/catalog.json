@@ -1,0 +1,107 @@
+{
+  "isPreview": true,
+  "websiteSlug": "/kumpul-demo",
+  "profile": {
+    "name": "Kumpul",
+    "tagline": "Deep Teal • Family Trust"
+  },
+  "templateTheme": {
+    "colors": {
+      "background": "#F0F7F8",
+      "surface": "#FFFFFF",
+      "text": "#0F172A",
+      "textMuted": "#64748B",
+      "accent": "#006699",
+      "accentHover": "#00557A",
+      "border": "#B3D4DD",
+      "success": "#0E9F6E"
+    }
+  },
+  "pages": [
+    { "slug": "home", "title": "Beranda", "isHome": true, "placement": "header" },
+    { "slug": "gathering", "title": "Katalog Gathering", "placement": "header" },
+    { "slug": "about", "title": "Tentang", "placement": "header" },
+    { "slug": "how-it-works", "title": "Cara Kerja", "placement": "header" }
+  ],
+  "sections": [
+    {
+      "id": "katalog",
+      "type": "products_grid",
+      "content": {
+        "eyebrow": "Temukan acara berikutnya",
+        "title": "Katalog Gathering",
+        "subtitle": "Pilih pengalaman berikutnya bersama keluarga dan komunitas.",
+        "filter_type": "gathering"
+      }
+    }
+  ],
+  "categories": [
+    { "id": "outdoor", "label": "Outdoor", "description": "Hiking, run, camping" },
+    { "id": "workshop", "label": "Workshop", "description": "Karya tangan & skill" },
+    { "id": "family", "label": "Family", "description": "Kumpul keluarga" },
+    { "id": "komunitas", "label": "Komunitas", "description": "Ngobrol & bertumbuh" }
+  ],
+  "products": [
+    {
+      "id": "family-camp",
+      "name": "Family Camp Lembang — Edisi Libur Sekolah",
+      "slug": "family-camp-lembang",
+      "description": "Gathering keluarga untuk menikmati waktu bersama di alam terbuka.",
+      "priceLabel": "Rp 350K / keluarga",
+      "type": "gathering",
+      "category": "Family",
+      "gatheringMeta": { "eventDate": "2026-10-23", "eventTime": "08:00", "location": "Lembang, Bandung", "maxAttendees": 40 }
+    },
+    {
+      "id": "ceramic-workshop",
+      "name": "Workshop Keramik & Kopi Slow Bar",
+      "slug": "workshop-keramik",
+      "description": "Belajar membuat keramik sambil menikmati kopi pilihan.",
+      "priceLabel": "Rp 185K / orang",
+      "type": "gathering",
+      "category": "Workshop",
+      "gatheringMeta": { "eventDate": "2026-10-24", "eventTime": "10:00", "location": "Kemang, Jakarta", "maxAttendees": 18 }
+    },
+    {
+      "id": "trail-run",
+      "name": "Trail Run Sentul — Sunrise Batch",
+      "slug": "trail-run-sentul",
+      "description": "Mulai pagi dengan rute lari dan pemandangan perbukitan.",
+      "priceLabel": "Rp 125K / tiket",
+      "type": "gathering",
+      "category": "Outdoor",
+      "gatheringMeta": { "eventDate": "2026-10-25", "eventTime": "05:30", "location": "Sentul, Bogor", "maxAttendees": 30 }
+    },
+    {
+      "id": "community-reading",
+      "name": "Komunitas Baca: Diskusi Sore di Taman",
+      "slug": "komunitas-baca",
+      "description": "Sesi baca dan diskusi santai terbuka untuk semua.",
+      "priceLabel": "Gratis — RSVP",
+      "type": "gathering",
+      "category": "Komunitas",
+      "gatheringMeta": { "eventDate": "2026-10-26", "eventTime": "16:00", "location": "Tebet Eco Park", "maxAttendees": 24 }
+    },
+    {
+      "id": "parenting-circle",
+      "name": "Parenting Circle: Screen Time & Anak",
+      "slug": "parenting-circle",
+      "description": "Diskusi praktis dan ramah keluarga bersama fasilitator.",
+      "priceLabel": "Rp 95K / pasangan",
+      "type": "gathering",
+      "category": "Family",
+      "gatheringMeta": { "eventDate": "2026-10-27", "eventTime": "09:00", "location": "Online + BSD", "maxAttendees": 22 }
+    },
+    {
+      "id": "outdoor-sketch",
+      "name": "Outdoor Sketch & Journaling Workshop",
+      "slug": "outdoor-sketch",
+      "description": "Sesi menggambar santai dan journaling di ruang terbuka.",
+      "priceLabel": "Rp 220K / kit",
+      "type": "gathering",
+      "category": "Workshop",
+      "gatheringMeta": { "eventDate": "2026-10-28", "eventTime": "08:30", "location": "Kota Tua, Jakarta", "maxAttendees": 16 }
+    }
+  ],
+  "auth": { "isLoggedIn": false, "loginHref": "/kumpul-demo/login" }
+}

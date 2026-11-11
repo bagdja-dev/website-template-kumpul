@@ -1,0 +1,32 @@
+{
+  "name": "@bagdja/kumpul",
+  "version": "1.0.0",
+  "description": "Kumpul website template for Bagdja",
+  "license": "UNLICENSED",
+  "type": "commonjs",
+  "main": "dist/server.cjs",
+  "exports": {
+    ".": "./dist/server.cjs"
+  },
+  "files": [
+    "dist",
+    "manifest.json",
+    "README.md"
+  ],
+  "peerDependencies": {
+    "react": "^18.3.0"
+  },
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "dev": "node scripts/preview.mjs",
+    "test": "npm run build && node --test",
+    "prepack": "npm run build"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "devDependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  }
+}

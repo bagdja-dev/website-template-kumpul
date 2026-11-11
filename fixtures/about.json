@@ -1,0 +1,70 @@
+{
+  "isPreview": true,
+  "websiteSlug": "/kumpul-demo",
+  "profile": { "name": "Kumpul", "tagline": "Deep Teal • Family Trust" },
+  "templateTheme": {
+    "colors": {
+      "background": "#F0F7F8",
+      "surface": "#FFFFFF",
+      "text": "#0F172A",
+      "textMuted": "#64748B",
+      "accent": "#006699",
+      "accentHover": "#00557A",
+      "border": "#B3D4DD",
+      "success": "#0E9F6E"
+    }
+  },
+  "pages": [
+    { "slug": "home", "title": "Beranda", "isHome": true, "placement": "header" },
+    { "slug": "gathering", "title": "Katalog Gathering", "placement": "header" },
+    { "slug": "about", "title": "Tentang", "placement": "header" },
+    { "slug": "how-it-works", "title": "Cara Kerja", "placement": "header" }
+  ],
+  "sections": [
+    {
+      "id": "tentang-kumpul",
+      "type": "about",
+      "content": {
+        "eyebrow": "Tentang Kumpul",
+        "title": "Kumpul bukan sekadar datang, tapi bertumbuh bareng.",
+        "body": "Bagdja Kumpul lahir dari keresahan: bikin gathering itu ribet — daftar peserta tercecer, tagihan manual, dan koordinasi berantakan. Kami membantu mengurus alurnya, supaya penyelenggara bisa fokus pada orang-orang dan momen kebersamaan."
+      }
+    },
+    {
+      "id": "kenapa-kumpul",
+      "type": "features_grid",
+      "content": {
+        "eyebrow": "Kenapa pilih kami",
+        "title": "Lebih rapi untuk panitia, lebih nyaman untuk peserta.",
+        "features": [
+          { "icon": "✍️", "title": "Pendaftaran praktis", "desc": "Form pendaftaran membantu mengumpulkan kebutuhan peserta dalam satu alur." },
+          { "icon": "🧾", "title": "Tagihan teratur", "desc": "Informasi pembayaran dan tagihan peserta tersaji lebih jelas." },
+          { "icon": "👥", "title": "Kelola kapasitas", "desc": "Data peserta membantu panitia menyiapkan acara sesuai kapasitas." },
+          { "icon": "📅", "title": "Komunitas terhubung", "desc": "Informasi acara, kalender, dan komunikasi peserta lebih mudah ditemukan." }
+        ]
+      }
+    },
+    {
+      "id": "galeri-kumpul",
+      "type": "gallery",
+      "content": {
+        "eyebrow": "Momen kebersamaan",
+        "title": "Cerita dari setiap pertemuan",
+        "layout": "grid",
+        "images": [
+          { "url": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 260'%3E%3Crect width='400' height='260' fill='%23006699'/%3E%3Ccircle cx='200' cy='130' r='64' fill='%23e6f4f6'/%3C/svg%3E", "alt": "Ilustrasi camping keluarga", "caption": "Camping bersama keluarga" },
+          { "url": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 260'%3E%3Crect width='400' height='260' fill='%230e7490'/%3E%3Ccircle cx='200' cy='130' r='64' fill='%23d9eff0'/%3C/svg%3E", "alt": "Ilustrasi workshop komunitas", "caption": "Workshop komunitas" },
+          { "url": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 260'%3E%3Crect width='400' height='260' fill='%231f766e'/%3E%3Ccircle cx='200' cy='130' r='64' fill='%23d9e8d9'/%3C/svg%3E", "alt": "Ilustrasi olahraga luar ruang", "caption": "Olahraga di alam terbuka" },
+          { "url": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 260'%3E%3Crect width='400' height='260' fill='%235b6b8a'/%3E%3Ccircle cx='200' cy='130' r='64' fill='%23e1e8ed'/%3C/svg%3E", "alt": "Ilustrasi komunitas berdiskusi", "caption": "Berbagi cerita dan ide" },
+          { "url": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 260'%3E%3Crect width='400' height='260' fill='%237a6547'/%3E%3Ccircle cx='200' cy='130' r='64' fill='%23eee7db'/%3C/svg%3E", "alt": "Ilustrasi belajar bersama", "caption": "Belajar hal baru bersama" },
+          { "url": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 260'%3E%3Crect width='400' height='260' fill='%233a6b55'/%3E%3Ccircle cx='200' cy='130' r='64' fill='%23d9e8d9'/%3E%3C/svg%3E", "alt": "Ilustrasi kegiatan luar ruang", "caption": "Menikmati waktu di luar ruang" }
+        ]
+      }
+    }
+  ],
+  "products": [],
+  "categories": [],
+  "locations": [],
+  "faqs": [],
+  "auth": { "isLoggedIn": false, "loginHref": "/kumpul-demo/login" }
+}
