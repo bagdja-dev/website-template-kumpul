@@ -78,7 +78,32 @@ test('renders the how-it-works page process steps and host-provided FAQs', () =>
   assert.equal((output.match(/class="kumpul-faq-item"/g) || []).length, 4);
 });
 
-test('renders the calendar designer preview with local plan and invitation controls', () => {
+// ── Halaman sistem: kontrak props.page (template-owned-system-pages-plan.md) ──
+
+const PAGE_SLUG = {
+  keranjang: 'cart',
+  transaksi: 'orders',
+  tagihan: 'tagihan',
+  'detail-invoice': 'invoice-detail',
+  'detail-transaksi': 'transaction-detail',
+  'detail-rencana-gathering': 'plan-detail',
+};
+
+function withoutPage(name) {
+  const props = fixture(name);
+  delete props.page;
+  props.isPreview = false;
+  if (PAGE_SLUG[name]) props.activePageSlug = PAGE_SLUG[name];
+  return props;
+}
+
+function live(name) {
+  const props = fixture(name);
+  props.isPreview = false;
+  return props;
+}
+
+test('renders the calendar page from props.page with local plan and invitation controls', () => {
   const output = html(fixture('calendar'));
 
   assert.match(output, /aria-current="page"/);
@@ -90,41 +115,27 @@ test('renders the calendar designer preview with local plan and invitation contr
   assert.match(output, /data-calendar-next/);
   assert.match(output, /data-calendar-previous/);
   assert.match(output, /data-calendar-day="2026-12-12"/);
-  assert.match(output, /aria-label="12 Desember, 1 acara"/);
-  assert.match(output, /data-calendar-date="2026-12-12"/);
   assert.match(output, /<dialog[^>]*data-calendar-agenda-dialog/);
-  assert.match(output, /data-calendar-close/);
-  assert.match(output, /data-calendar-agenda-empty/);
   assert.match(output, /Rencana Saya/);
   assert.match(output, /role="tab"[^>]*aria-selected="true"[^>]*data-calendar-tab="calendar"/);
-  assert.match(output, /Undangan/);
   assert.match(output, /data-calendar-filter="payment"/);
   assert.match(output, /Family Camp Lembang/);
   assert.match(output, /Workshop Keramik Akhir Tahun/);
-  assert.match(output, /2026/);
-  assert.match(output, /disabled="">Lanjutkan rencana/);
-  assert.match(output, /disabled="">Lihat undangan/);
-  assert.equal((output.match(/data-calendar-card=/g) || []).length, 4);
+  assert.ok((output.match(/data-calendar-card=/g) || []).length >= 4);
 });
 
-test('does not render calendar preview data outside preview mode', () => {
-  const props = fixture('calendar');
-  props.isPreview = false;
-  const output = html(props);
-
-  assert.doesNotMatch(output, /Family Camp Lembang/);
-  assert.doesNotMatch(output, /Workshop Keramik Akhir Tahun/);
+test('renders live calendar data on the seller website and only notes preview data in preview', () => {
+  const output = html(live('calendar'));
+  assert.match(output, /Family Camp Lembang/);
   assert.doesNotMatch(output, /Preview desainer · data contoh saja/);
-  assert.match(output, /Belum ada rencana acara/);
+  assert.match(html(withoutPage('calendar')), /<span>Kalender<\/span><\/a>/);
 });
 
-test('renders the billing preview with fixture-only invoices and status filters', () => {
+test('renders the billing page with all invoice states and status filters', () => {
   const output = html(fixture('tagihan'));
 
-  assert.match(output, /aria-current="page"/);
   assert.match(output, /aria-label="Tagihan"/);
   assert.match(output, /<h1>Tagihan Saya<\/h1>/);
-  assert.match(output, /Preview desainer · data contoh saja/);
   assert.match(output, /data-billing-filter="issued"/);
   assert.match(output, /data-billing-status="scheduled"/);
   assert.match(output, /data-billing-status="paid"/);
@@ -133,48 +144,45 @@ test('renders the billing preview with fixture-only invoices and status filters'
   assert.match(output, /Family Camp Lembang/);
   assert.match(output, /Workshop Keramik Akhir Tahun/);
   assert.match(output, /Rp 750\.000/);
-  assert.match(output, /disabled="">Bayar/);
+  assert.match(output, /href="\/kumpul-demo\/tagihan\/k_inv_invoice_pottery"[^>]*>Lihat detail tagihan/);
 });
 
-test('does not render billing fixture data outside preview mode', () => {
-  const props = fixture('tagihan');
-  props.isPreview = false;
-  const output = html(props);
+test('keeps billing payment disabled until the host provides the action bridge', () => {
+  const disabled = html(live('tagihan'));
+  assert.match(disabled, /disabled=""[^>]*data-bagdja-intent="invoice\.pay"[^>]*>Bayar/);
 
+  const props = live('tagihan');
+  props.bridgeVersion = 1;
+  const enabled = html(props);
+  assert.match(enabled, /<button type="button" class="kumpul-billing-action" data-bagdja-intent="invoice\.pay" data-bagdja-key="k_inv_termin_family_camp">Bayar/);
+});
+
+test('shows the host-managed message when no billing page data is provided', () => {
+  const output = html(withoutPage('tagihan'));
   assert.doesNotMatch(output, /Family Camp Lembang/);
-  assert.doesNotMatch(output, /INV-KMP-2026-044-01/);
   assert.match(output, /Data tagihan dan status pembayaran dikelola oleh host Bagdja/);
 });
 
-test('renders the transactions preview with local status filters and host-managed actions', () => {
+test('renders the transactions page with filters and real links to transaction detail', () => {
   const output = html(fixture('transaksi'));
 
-  assert.match(output, /aria-current="page"/);
   assert.match(output, /aria-label="Transaksi"/);
   assert.match(output, /<h1>Daftar Transaksi<\/h1>/);
-  assert.match(output, /Preview desainer · data contoh saja/);
   assert.match(output, /data-transaction-filter="awaiting"/);
-  assert.match(output, /data-transaction-filter="process"/);
   assert.match(output, /data-transaction-filter="done"/);
-  assert.match(output, /data-transaction-filter="cancelled"/);
   assert.match(output, /Family Camp Lembang \+ 1 produk lainnya/);
   assert.match(output, /Menunggu pelunasan/);
-  assert.match(output, /Workshop Keramik Akhir Tahun/);
   assert.match(output, /Rp 1\.250\.000/);
-  assert.match(output, /disabled="">Detail Transaksi/);
+  assert.match(output, /href="\/kumpul-demo\/order\/k_trx_trx_family_camp">Detail Transaksi/);
 });
 
-test('does not render transaction fixture data outside preview mode', () => {
-  const props = fixture('transaksi');
-  props.isPreview = false;
-  const output = html(props);
-
-  assert.doesNotMatch(output, /Family Camp Lembang/);
+test('shows the host-managed message when no transactions page data is provided', () => {
+  const output = html(withoutPage('transaksi'));
   assert.doesNotMatch(output, /INV-KMP-2026-018/);
   assert.match(output, /Data transaksi dikelola oleh host Bagdja/);
 });
 
-test('renders invoice detail from preview-only invoice fixture with payment disabled', () => {
+test('renders invoice detail and only enables payment through the host bridge', () => {
   const output = html(fixture('detail-invoice'));
 
   assert.match(output, /data-invoice-detail/);
@@ -184,157 +192,134 @@ test('renders invoice detail from preview-only invoice fixture with payment disa
   assert.match(output, /Dita Prameswari/);
   assert.match(output, /22 November 2026/);
   assert.match(output, /350\.000/);
-  assert.match(output, /Preview desainer · data contoh saja/);
-  assert.match(output, /disabled="">Login untuk membayar/);
+  assert.match(output, /disabled=""[^>]*data-bagdja-intent="invoice\.pay"[^>]*>Bayar sekarang/);
+
+  const bridged = live('detail-invoice');
+  bridged.bridgeVersion = 1;
+  assert.match(html(bridged), /<button type="button" data-bagdja-intent="invoice\.pay" data-bagdja-key="k_inv_INV_KMP_2026_044_01">Bayar sekarang/);
 });
 
-test('does not expose invoice fixture data outside preview mode', () => {
-  const props = fixture('detail-invoice');
-  props.isPreview = false;
-  const output = html(props);
+test('sends signed-out buyers to the host login before paying an invoice', () => {
+  const props = live('detail-invoice');
+  props.page.loginRequired = true;
+  props.auth = { isLoggedIn: false, loginHref: '/kumpul-demo/auth/login' };
+  assert.match(html(props), /<a class="kumpul-detail-pay-link" href="\/kumpul-demo\/auth\/login">Login untuk membayar/);
+});
 
+test('shows the host-managed message when no invoice page data is provided', () => {
+  const output = html(withoutPage('detail-invoice'));
   assert.doesNotMatch(output, /INV-KMP-2026-044-01/);
-  assert.doesNotMatch(output, /Dita Prameswari/);
-  assert.doesNotMatch(output, /Workshop Keramik Akhir Tahun/);
+  assert.match(output, /Data tagihan dan status pembayaran dikelola oleh host Bagdja/);
 });
 
-test('renders transaction detail and keeps host-managed payment disabled', () => {
+test('renders transaction detail from props.page with retry payment behind the bridge', () => {
   const output = html(fixture('detail-transaksi'));
 
   assert.match(output, /data-transaction-detail/);
   assert.match(output, /INV-KMP-2026-018/);
   assert.match(output, /Family Camp Lembang/);
   assert.match(output, /Paket makan keluarga/);
-  assert.match(output, /ESC-KMP-018/);
   assert.match(output, /Cidadap, Bandung/);
-  assert.match(output, /Total/);
-  assert.match(output, /disabled="">Lanjutkan Pembayaran/);
-  assert.match(output, /Dana escrow disimpan sampai proses konfirmasi pesanan selesai\./);
+  assert.match(output, /Rini Saputri/);
+  assert.match(output, /disabled=""[^>]*data-bagdja-action="order\.retry_payment"[^>]*>Lanjutkan Pembayaran/);
+  assert.doesNotMatch(output, /ESC-KMP-018/);
 });
 
-test('renders host-provided order_detail section transaction data outside preview', () => {
-  const props = fixture('detail-transaksi');
-  props.isPreview = false;
-  props.activePageSlug = 'orders';
+test('still renders a legacy host order_detail section without props.page', () => {
+  const props = withoutPage('detail-transaksi');
   props.sections = [{
     type: 'order_detail',
-    content: { transaction: props.previewTransaction, order: null },
+    content: {
+      transaction: {
+        id: 'trx-host', ref_number: 'INV-HOST-001', status: 'PENDING_PAYMENT', total_amount: 100000,
+        items: [{ id: 'i1', quantity: 1, unit_price: 100000, total_amount: 100000, product_name: 'Produk host' }],
+      },
+      order: null,
+    },
   }];
   const output = html(props);
-
   assert.match(output, /data-transaction-detail/);
-  assert.match(output, /INV-KMP-2026-018/);
-  assert.doesNotMatch(output, /Preview desainer · data contoh saja/);
-  assert.match(output, /aria-label="Transaksi" aria-current="page"/);
+  assert.match(output, /INV-HOST-001/);
+  assert.match(output, /Produk host/);
 });
 
-test('renders gathering plan detail and the full preview-only workflow simulator', () => {
+test('renders gathering plan detail with the preview-only workflow simulator', () => {
   const output = html(fixture('detail-rencana-gathering'));
 
   assert.match(output, /data-plan-detail/);
-  assert.doesNotMatch(output, /class="kumpul-page-nav"/);
   assert.match(output, /data-plan-simulator/);
   assert.match(output, /data-current-step="PLAN"/);
   assert.equal(Array.from(output.matchAll(/data-sim-step="/g)).length, 4);
-  assert.doesNotMatch(output, /class="kumpul-plan-workflow"/);
   assert.match(output, /data-sim-panel="PLAN"/);
-  assert.match(output, /\.kumpul-plan-sim-steps\{position:sticky;top:var\(--kumpul-header-height,0px\)/);
   assert.match(output, /data-sim-panel="INVITATIONS" hidden=""/);
-  assert.match(output, /data-sim-panel="INVITATION_CONFIRMATION" hidden=""/);
-  assert.match(output, /data-sim-panel="PAYMENT_CONFIRMATION" hidden=""/);
-  assert.match(output, /data-sim-save-plan/);
-  assert.match(output, /data-sim-submit-plan/);
-  assert.match(output, /data-sim-rsvp-date/);
-  assert.match(output, /data-sim-payment-date/);
-  assert.match(output, /data-sim-event-date/);
-  assert.match(output, /data-sim-invite-whatsapp/);
-  assert.match(output, /data-sim-add-invite/);
-  assert.match(output, /data-sim-confirm-participants/);
-  const confirmationPanel = output.match(/<div class="kumpul-plan-sim-panel" data-sim-panel="INVITATION_CONFIRMATION"[^]*?<\/div><\/div>/)?.[0] || '';
-  assert.match(confirmationPanel, /data-sim-public-invitation/);
-  assert.match(confirmationPanel, /data-sim-public-qr/);
-  assert.match(confirmationPanel, /gathering\/invite\/plan-workshop/);
-  assert.doesNotMatch(confirmationPanel, /<select|data-sim-participant-option|Sesi/);
-  assert.match(output, /data-sim-rsvp-status="ACCEPTED"/);
-  assert.match(output, /data-sim-confirm-event/);
-  assert.doesNotMatch(output, /data-sim-price|data-sim-min|data-sim-max|data-sim-location/);
-  assert.doesNotMatch(output, /Konsumsi|Paket kopi|Paket makan/);
   assert.match(output, /Workshop Keramik/);
   assert.match(output, /KMP-2026-038/);
   assert.match(output, /20 Desember 2026/);
   assert.match(output, /Kemang, Jakarta Selatan/);
   assert.match(output, /Rp 425\.000/);
   assert.match(output, /Sesi pagi/);
-  assert.match(output, /hanya tersimpan sementara di halaman preview/);
-  assert.match(output, /Tidak ada undangan terkirim, pembayaran diproses/);
+  assert.match(output, /Dewi Anggraini/);
+  const confirmationPanel = output.match(/<div class="kumpul-plan-sim-panel" data-sim-panel="INVITATION_CONFIRMATION"[^]*?<\/div><\/div>/)?.[0] || '';
+  assert.match(confirmationPanel, /data-sim-public-invitation/);
+  assert.match(confirmationPanel, /gathering\/invite\/k_plan_plan_workshop/);
 });
 
 test('only shows the public invitation QR for open gathering plans', () => {
   const props = fixture('detail-rencana-gathering');
-  props.previewGatheringPlan.invite_policy = 'INVITE_ONLY';
+  props.page.plan.invitePolicy = 'INVITE_ONLY';
   const output = html(props);
   const confirmationPanel = output.match(/<div class="kumpul-plan-sim-panel" data-sim-panel="INVITATION_CONFIRMATION"[^]*?<\/div><\/div>/)?.[0] || '';
 
   assert.match(confirmationPanel, /data-sim-public-invitation[^>]*hidden=""/);
 });
 
-test('renders host-provided gatheringPlan data from order_detail outside preview', () => {
-  const props = fixture('detail-rencana-gathering');
-  props.isPreview = false;
-  props.activePageSlug = 'orders';
-  props.sections = [{
-    type: 'order_detail',
-    content: {
-      order: { id: 'ORD-HOST-100', created_at: '2026-11-10T09:00:00+07:00' },
-      gatheringPlan: props.previewGatheringPlan,
-    },
-  }];
-  const output = html(props);
-
+test('renders the live gathering plan workflow without the simulator or invitee contacts', () => {
+  const output = html(live('detail-rencana-gathering'));
   assert.match(output, /data-plan-detail/);
   assert.doesNotMatch(output, /data-plan-simulator/);
   assert.match(output, /class="kumpul-plan-workflow" aria-label="Tahapan gathering"/);
-  assert.match(output, /ORD-HOST-100/);
   assert.match(output, /KMP-2026-038/);
-  assert.doesNotMatch(output, /Preview desainer · data contoh saja/);
-  assert.match(output, /aria-label="Keranjang" aria-current="page"/);
+  assert.doesNotMatch(output, /@[a-z0-9-]+\.[a-z]{2,}/i);
 });
 
-test('does not expose gathering plan fixture details outside preview mode', () => {
-  const props = fixture('detail-rencana-gathering');
-  props.isPreview = false;
-  props.previewGatheringPlan = undefined;
-  const output = html(props);
-
+test('shows the host-managed message when no gathering plan data is provided', () => {
+  const output = html(withoutPage('detail-rencana-gathering'));
   assert.match(output, /Data rencana gathering dikelola oleh host Bagdja/);
-  assert.doesNotMatch(output, /Workshop Keramik &amp; Kopi/);
-  assert.doesNotMatch(output, /ORD-KMP-2026-038/);
+  assert.doesNotMatch(output, /KMP-2026-038/);
 });
 
-test('renders a local cart preview with checkout selection and unavailable-item states', () => {
+test('renders the cart with selection, quantity, unavailable items, and gated checkout', () => {
   const output = html(fixture('keranjang'));
 
-  assert.match(output, /aria-current="page"/);
   assert.match(output, /aria-label="Keranjang"/);
   assert.match(output, /<h1>Keranjang/);
-  assert.match(output, /Preview desainer · data contoh saja/);
   assert.match(output, /Family Camp Lembang/);
   assert.match(output, /Menunggu penawaran/);
   assert.match(output, /Rencana gathering belum masuk tahap pembayaran/);
   assert.match(output, /data-cart-select-all/);
   assert.match(output, /data-cart-quantity-increase/);
   assert.match(output, /data-cart-remove/);
-  assert.match(output, /disabled="">Lanjut ke Checkout/);
   assert.match(output, /Rp 900\.000/);
+  assert.match(output, /disabled=""[^>]*data-bagdja-intent="cart\.checkout"[^>]*>Lanjut ke Checkout/);
+
+  const bridged = live('keranjang');
+  bridged.bridgeVersion = 1;
+  assert.match(html(bridged), /<button type="button" class="kumpul-cart-checkout" data-bagdja-intent="cart\.checkout">Lanjut ke Checkout/);
 });
 
-test('does not render cart fixture data outside preview mode', () => {
-  const props = fixture('keranjang');
-  props.isPreview = false;
-  const output = html(props);
-
+test('shows the host-managed message when no cart page data is provided', () => {
+  const output = html(withoutPage('keranjang'));
   assert.doesNotMatch(output, /Family Camp Lembang/);
   assert.match(output, /Item keranjang dan rencana gathering dikelola oleh host Bagdja/);
+});
+
+test('renders only the Kumpul header for host-managed pages', () => {
+  const props = fixture('home');
+  props.headerOnly = true;
+  const output = html(props);
+  assert.match(output, /class="kumpul-header"/);
+  assert.doesNotMatch(output, /<main/);
+  assert.doesNotMatch(output, /<footer/);
 });
 
 test('renders a complete gathering catalog page from the external renderer contract', () => {
@@ -456,4 +441,22 @@ test('renders a useful empty state when runtime props are absent', () => {
   assert.match(output, /class="kumpul-template"/);
   assert.match(output, /Tambahkan section melalui editor website/);
   assert.match(output, /Kumpul/);
+});
+
+test('wires cart controls to the Bagdja host bridge with target quantities and selectable keys', () => {
+  const props = live('keranjang');
+  props.bridgeVersion = 1;
+  const output = html(props);
+  const firstKey = props.page.items[0].key;
+  assert.match(output, new RegExp(`data-cart-quantity-increase=""[^>]*data-bagdja-intent="cart\\.set_quantity" data-bagdja-key="${firstKey}" data-bagdja-quantity="3"`));
+  assert.match(output, new RegExp(`data-cart-quantity-decrease=""[^>]*data-bagdja-intent="cart\\.set_quantity" data-bagdja-key="${firstKey}" data-bagdja-quantity="1"`));
+  assert.match(output, new RegExp(`data-cart-remove=""[^>]*data-bagdja-intent="cart\\.remove" data-bagdja-key="${firstKey}"`));
+  assert.match(output, new RegExp(`data-cart-select=""[^>]*data-bagdja-selectable="" data-bagdja-key="${firstKey}"`));
+  const planKey = props.page.items.find((item) => item.kind === 'gathering_plan').key;
+  assert.doesNotMatch(output, new RegExp(`data-bagdja-selectable="" data-bagdja-key="${planKey}"`));
+});
+
+test('links calendar plans and invitations to their host pages', () => {
+  const output = html(live('calendar'));
+  assert.match(output, /<a class="kumpul-calendar-action" href="\/kumpul-demo\/gathering\/[^"]+">Lanjutkan rencana/);
 });

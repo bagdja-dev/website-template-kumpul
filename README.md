@@ -15,16 +15,45 @@ direction and notes about the prototype's sample data and host-managed pages.
 ## Contract
 
 - Package: `@bagdja/kumpul`
-- Version: `1.0.0`
+- Version: `1.1.0`
 - Template slug: `kumpul`
-- `rendererApiVersion`: `1`
-- Entry point: `dist/server.cjs`
+- `manifestVersion`: `1`, `rendererApiVersion`: `1`
+- Entry point: `dist/server.cjs` (wajib) dan `dist/client.js` (JavaScript browser), dinyatakan di `manifest.entry`
+- Halaman contoh untuk website baru: `manifest.defaultPages` (Beranda, Katalog Gathering, Cara Kerja, Tentang)
+- Halaman sistem milik template (`manifest.pageOverrides`): header, keranjang, transaksi, detail transaksi, tagihan, invoice, kalender, rencana gathering
+
+## Halaman sistem (`props.page`)
+
+Sejak `1.1.0`, data halaman sistem dibaca dari `props.page` sesuai kontrak
+Bagdja (`bagdja-website-template-runtime/contract/page-contract.d.ts`), bukan
+lagi dari `props.preview*`. `src/page-adapter.cjs` adalah satu-satunya tempat
+yang mengenal bentuk kontrak itu dan menerjemahkannya ke model internal
+renderer. Data yang sama dipakai di preview lokal, preview platform, dan
+website seller; `isPreview` hanya mengatur catatan "Preview desainer" dan
+simulator rencana gathering.
+
+- Tanggal: ISO 8601 dengan offset timezone; uang: bilangan bulat rupiah.
+- Template tidak menerima email/token/ID internal. Identitas aksi = `key` opaque.
+- Aksi memakai atribut bridge host Bagdja — bootstrap di iframe menangani
+  klik, template tidak memanggil API:
+  `data-bagdja-intent` (`cart.set_quantity` / `cart.remove` / `cart.checkout` /
+  `invoice.pay` / `gathering.respond`) + `data-bagdja-key`,
+  `data-bagdja-quantity` (jumlah tujuan), `data-bagdja-selectable` pada checkbox
+  item yang ikut checkout, dan `data-bagdja-action="order.retry_payment"` untuk
+  aksi transaksi. Tombol baru aktif bila host menyediakan bridge
+  (`props.bridgeVersion`); setelah aksi berhasil host memuat ulang halaman atau
+  mengarahkan ke pembayaran.
+- `props.headerOnly === true` → hanya header Kumpul (halaman yang isinya masih
+  dikelola Bagdja, mis. chat dan checkout).
+- Fixture halaman sistem di `fixtures/` memakai data yang sama dengan fixture
+  standar Bagdja, dengan identitas Kumpul.
 - Export: `render(props)`, returning a React element
 - React: supplied by the Bagdja runtime
 
 The package is kept separate from the production renderer. Publishing a package
-does not publish or activate a template in the runtime registry; registration,
-review, and publication are separate platform steps.
+to npm does not publish or activate it in Bagdja: the platform fetches and
+validates the exact version into staging, then activates it only after the
+separate deep-review approval and release.
 
 ## Development
 
@@ -92,11 +121,21 @@ from it, then replace the renderer and fixtures while preserving the package
 and manifest contract. The local preview is a development aid, not a substitute
 for Bagdja Studio/reviewer preview or the isolated production runtime.
 
-The runtime's optional `client_bundle` capability is approval-gated. Review
-and approve the exact package version before enabling its browser bundle in
-Bagdja; the local fixture preview is not that approval.
+`dist/client.js` dibaca reviewer Bagdja sebelum versi disetujui; setelah
+terbit, JavaScript ini berjalan di semua halaman website seller di dalam iframe
+sandbox. Preview fixture lokal bukan persetujuan tersebut.
 
 `npm run build` builds the package; `npm test` checks the renderer, and
 `npm pack --dry-run` previews the contents to be uploaded to npm without
 publishing anything. The design reference is documentation material and is
 intentionally excluded from the published package.
+
+After review, publish the exact version declared in `package.json`:
+
+```sh
+npm publish --access public
+```
+
+The generated npm package must contain `manifest.json`, `dist/server.cjs`, and
+optionally `dist/client.js`; the platform retrieves those files from npm, so
+reviewers do not upload bundle files manually.

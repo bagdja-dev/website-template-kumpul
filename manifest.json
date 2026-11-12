@@ -1,7 +1,22 @@
 {
+  "manifestVersion": 1,
   "slug": "kumpul",
-  "version": "1.0.0",
+  "name": "Kumpul",
+  "version": "1.1.0",
   "rendererApiVersion": 1,
+  "businessProfiles": [
+    "gathering"
+  ],
+  "capabilities": [
+    "catalog",
+    "cart",
+    "orders",
+    "faq",
+    "locations",
+    "gathering",
+    "buyer_auth",
+    "chat"
+  ],
   "sections": [
     "hero",
     "about",
@@ -14,10 +29,283 @@
     "locations_list",
     "cta"
   ],
-  "capabilities": [
-    "server_render",
-    "preview",
-    "catalog_read",
-    "client_bundle"
+  "pageOverrides": [
+    "header",
+    "cart",
+    "orders",
+    "order_detail",
+    "tagihan",
+    "invoice_detail",
+    "calendar",
+    "gathering_plan"
+  ],
+  "entry": {
+    "server": "dist/server.cjs",
+    "client": "dist/client.js"
+  },
+  "defaultPages": [
+    {
+      "slug": "home",
+      "title": "Beranda",
+      "isHome": true,
+      "sections": [
+        {
+          "type": "hero",
+          "content": {
+            "subtitle": "Komunitas aktif • saatnya berkumpul",
+            "headline": "Kumpul bareng jadi lebih mudah.",
+            "lede": "Platform gathering untuk keluarga, workshop, dan komunitas. Dari perencanaan hingga hari acara, semua dalam satu alur.",
+            "stats": [
+              {
+                "value": "1.2K+",
+                "label": "Peserta komunitas"
+              },
+              {
+                "value": "48",
+                "label": "Event aktif"
+              },
+              {
+                "value": "4.9/5",
+                "label": "Rating komunitas"
+              }
+            ]
+          }
+        },
+        {
+          "type": "features_grid",
+          "content": {
+            "title": "Dari ide sampai absensi, rapi.",
+            "subtitle": "Alur acara yang jelas dari persiapan sampai hari berkumpul.",
+            "features": [
+              {
+                "icon": "1",
+                "title": "Perencanaan",
+                "desc": "Tentukan tema & lokasi"
+              },
+              {
+                "icon": "2",
+                "title": "Buka pendaftaran",
+                "desc": "Form dibuka untuk umum"
+              },
+              {
+                "icon": "3",
+                "title": "Buka pembayaran",
+                "desc": "Termin & tagihan otomatis"
+              },
+              {
+                "icon": "4",
+                "title": "Konfirmasi",
+                "desc": "Verifikasi peserta"
+              },
+              {
+                "icon": "5",
+                "title": "Absensi",
+                "desc": "Check-in QR saat gathering"
+              }
+            ]
+          }
+        },
+        {
+          "type": "products_grid",
+          "content": {
+            "title": "Gathering Terdekat",
+            "subtitle": "Pilih pengalaman berikutnya bersama keluarga dan komunitas.",
+            "filter_type": "gathering"
+          }
+        },
+        {
+          "type": "testimonial",
+          "content": {
+            "title": "Komunitas yang balik lagi.",
+            "subtitle": "Cerita peserta dari acara yang mereka ikuti.",
+            "items": [
+              {
+                "quote": "Anak-anak happy, panitia rapi banget. Pembayaran termin sangat membantu.",
+                "context": "Family Camp Lembang",
+                "location": "Rini & Keluarga"
+              },
+              {
+                "quote": "Flow-nya jelas. Dari daftar sampai check-in semuanya terasa mudah.",
+                "context": "Trail Run Sentul",
+                "location": "Dimas Pratama"
+              },
+              {
+                "quote": "Tempatnya nyaman dan materinya menarik. Suka pengingat lewat kalender.",
+                "context": "Workshop Keramik",
+                "location": "Sasha"
+              }
+            ]
+          }
+        },
+        {
+          "type": "locations_list",
+          "content": {
+            "title": "Lokasi Kumpul",
+            "subtitle": "Tempat pilihan komunitas untuk bertemu dan berbagi cerita."
+          }
+        },
+        {
+          "type": "cta",
+          "content": {
+            "title": "Siap bikin gathering pertamamu?",
+            "subtitle": "Rencanakan acara, undang komunitas, dan nikmati momen bersama.",
+            "button_text": "Jelajahi gathering",
+            "button_action": "link",
+            "button_url": "/gathering"
+          }
+        }
+      ]
+    },
+    {
+      "slug": "gathering",
+      "title": "Katalog Gathering",
+      "sections": [
+        {
+          "type": "products_grid",
+          "content": {
+            "eyebrow": "Temukan acara berikutnya",
+            "title": "Katalog Gathering",
+            "subtitle": "Pilih pengalaman berikutnya bersama keluarga dan komunitas.",
+            "filter_type": "gathering"
+          }
+        }
+      ]
+    },
+    {
+      "slug": "how-it-works",
+      "title": "Cara Kerja",
+      "sections": [
+        {
+          "type": "service_process_section",
+          "content": {
+            "title": "5 langkah, gathering jalan. Tanpa drama WA.",
+            "subtitle": "Alur yang jelas membantu panitia dan peserta menikmati setiap momen.",
+            "flow_id": "gathering-flow",
+            "flow_steps": [
+              {
+                "sequence": 1,
+                "status_name": "Perencanaan",
+                "description": "Tentukan tema, jadwal, lokasi, dan kebutuhan acara.",
+                "process_day": 1
+              },
+              {
+                "sequence": 2,
+                "status_name": "Buka pendaftaran",
+                "description": "Bagikan informasi acara dan kumpulkan data peserta.",
+                "process_day": 1
+              },
+              {
+                "sequence": 3,
+                "status_name": "Pembayaran",
+                "description": "Peserta melihat tagihan dan informasi pembayaran acara.",
+                "process_day": 2
+              },
+              {
+                "sequence": 4,
+                "status_name": "Konfirmasi",
+                "description": "Panitia memantau data dan kesiapan peserta.",
+                "process_day": 3
+              },
+              {
+                "sequence": 5,
+                "status_name": "Hari gathering",
+                "description": "Gunakan daftar peserta untuk membantu proses check-in.",
+                "process_day": 7
+              }
+            ]
+          }
+        },
+        {
+          "type": "faq_list",
+          "content": {
+            "title": "Pertanyaan tentang gathering",
+            "source": "faqs"
+          }
+        }
+      ]
+    },
+    {
+      "slug": "about",
+      "title": "Tentang",
+      "sections": [
+        {
+          "type": "about",
+          "content": {
+            "eyebrow": "Tentang Kumpul",
+            "title": "Kumpul bukan sekadar datang, tapi bertumbuh bareng.",
+            "body": "Bagdja Kumpul lahir dari keresahan: bikin gathering itu ribet — daftar peserta tercecer, tagihan manual, dan koordinasi berantakan. Kami membantu mengurus alurnya, supaya penyelenggara bisa fokus pada orang-orang dan momen kebersamaan."
+          }
+        },
+        {
+          "type": "features_grid",
+          "content": {
+            "eyebrow": "Kenapa pilih kami",
+            "title": "Lebih rapi untuk panitia, lebih nyaman untuk peserta.",
+            "features": [
+              {
+                "icon": "✍️",
+                "title": "Pendaftaran praktis",
+                "desc": "Form pendaftaran membantu mengumpulkan kebutuhan peserta dalam satu alur."
+              },
+              {
+                "icon": "🧾",
+                "title": "Tagihan teratur",
+                "desc": "Informasi pembayaran dan tagihan peserta tersaji lebih jelas."
+              },
+              {
+                "icon": "👥",
+                "title": "Kelola kapasitas",
+                "desc": "Data peserta membantu panitia menyiapkan acara sesuai kapasitas."
+              },
+              {
+                "icon": "📅",
+                "title": "Komunitas terhubung",
+                "desc": "Informasi acara, kalender, dan komunikasi peserta lebih mudah ditemukan."
+              }
+            ]
+          }
+        },
+        {
+          "type": "gallery",
+          "content": {
+            "eyebrow": "Momen kebersamaan",
+            "title": "Cerita dari setiap pertemuan",
+            "layout": "grid",
+            "images": [
+              {
+                "url": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 260'%3E%3Crect width='400' height='260' fill='%23006699'/%3E%3Ccircle cx='200' cy='130' r='64' fill='%23e6f4f6'/%3C/svg%3E",
+                "alt": "Ilustrasi camping keluarga",
+                "caption": "Camping bersama keluarga"
+              },
+              {
+                "url": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 260'%3E%3Crect width='400' height='260' fill='%230e7490'/%3E%3Ccircle cx='200' cy='130' r='64' fill='%23d9eff0'/%3C/svg%3E",
+                "alt": "Ilustrasi workshop komunitas",
+                "caption": "Workshop komunitas"
+              },
+              {
+                "url": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 260'%3E%3Crect width='400' height='260' fill='%231f766e'/%3E%3Ccircle cx='200' cy='130' r='64' fill='%23d9e8d9'/%3C/svg%3E",
+                "alt": "Ilustrasi olahraga luar ruang",
+                "caption": "Olahraga di alam terbuka"
+              },
+              {
+                "url": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 260'%3E%3Crect width='400' height='260' fill='%235b6b8a'/%3E%3Ccircle cx='200' cy='130' r='64' fill='%23e1e8ed'/%3C/svg%3E",
+                "alt": "Ilustrasi komunitas berdiskusi",
+                "caption": "Berbagi cerita dan ide"
+              },
+              {
+                "url": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 260'%3E%3Crect width='400' height='260' fill='%237a6547'/%3E%3Ccircle cx='200' cy='130' r='64' fill='%23eee7db'/%3C/svg%3E",
+                "alt": "Ilustrasi belajar bersama",
+                "caption": "Belajar hal baru bersama"
+              },
+              {
+                "url": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 260'%3E%3Crect width='400' height='260' fill='%233a6b55'/%3E%3Ccircle cx='200' cy='130' r='64' fill='%23d9e8d9'/%3E%3C/svg%3E",
+                "alt": "Ilustrasi kegiatan luar ruang",
+                "caption": "Menikmati waktu di luar ruang"
+              }
+            ]
+          }
+        }
+      ]
+    }
   ]
 }

@@ -1,8 +1,10 @@
 {
   "isPreview": true,
-  "activePageSlug": "invoice-detail",
   "websiteSlug": "/kumpul-demo",
-  "profile": { "name": "Kumpul", "tagline": "Deep Teal • Family Trust" },
+  "profile": {
+    "name": "Kumpul",
+    "tagline": "Deep Teal • Family Trust"
+  },
   "templateTheme": {
     "colors": {
       "background": "#F0F7F8",
@@ -21,23 +23,34 @@
   "categories": [],
   "locations": [],
   "faqs": [],
-  "previewInvoice": {
-    "invoice_id": "INV-KMP-2026-044-01",
-    "plan_number": "KMP-2026-044",
-    "gathering_title": "Workshop Keramik Akhir Tahun",
-    "attendee_name": "Rini",
-    "initiator_name": "Dita Prameswari",
-    "amount": 350000,
-    "currency": "IDR",
-    "payment_status": "UNPAID",
-    "payment_open": true,
-    "payment_deadline": "2026-11-15T23:59:00+07:00",
-    "event_date": "2026-11-22"
-  },
   "auth": {
     "isLoggedIn": true,
     "username": "Rini",
     "ordersHref": "/kumpul-demo/orders",
     "tagihanHref": "/kumpul-demo/tagihan"
+  },
+  "page": {
+    "contractVersion": 1,
+    "currency": "IDR",
+    "timezone": "Asia/Jakarta",
+    "type": "invoice_detail",
+    "invoice": {
+      "key": "k_inv_INV_KMP_2026_044_01",
+      "number": "INV-KMP-2026-044-01",
+      "planNumber": "KMP-2026-044",
+      "title": "Workshop Keramik Akhir Tahun",
+      "attendeeName": "Rini",
+      "initiatorName": "Dita Prameswari",
+      "amount": 350000,
+      "status": "ISSUED",
+      "statusLabel": "Belum dibayar",
+      "dueAt": "2026-11-15T23:59:00+07:00",
+      "eventAt": "2026-11-22T09:00:00+07:00"
+    },
+    "canPay": true,
+    "loginRequired": false,
+    "actions": [
+      "invoice.pay"
+    ]
   }
 }

@@ -1,4 +1,5 @@
 const React = require('react');
+const { adaptPage } = require('./page-adapter.cjs');
 
 const h = React.createElement;
 
@@ -16,6 +17,20 @@ const defaultColors = {
 
 function text(value, fallback = '') {
   return typeof value === 'string' && value.trim() ? value : fallback;
+}
+
+/**
+ * Aksi tulis (bayar, checkout, RSVP) hanya aktif bila halaman mengizinkannya
+ * (`page.actions`) DAN host sudah menyediakan bridge aksi (`props.bridgeVersion`,
+ * fase P2). Sebelum itu tombol tampil tetapi nonaktif — tidak ada tombol "mati".
+ */
+function intentEnabled(props, action) {
+  return Boolean(props.bridgeVersion) && list(props.kumpulPage && props.kumpulPage.actions).includes(action);
+}
+
+/** Atribut standar bridge host Bagdja (bootstrap iframe menangani klik; template tidak memanggil API). */
+function intentAttributes(action, key, extra = {}) {
+  return { 'data-bagdja-intent': action, ...(key ? { 'data-bagdja-key': key } : {}), ...extra };
 }
 
 function list(value) {
@@ -60,7 +75,9 @@ function billingStatus(invoice) {
   return ({
     SCHEDULED: 'scheduled',
     ISSUED: 'issued',
+    OVERDUE: 'issued',
     PAID: 'paid',
+    REFUNDED: 'refunded',
     CANCELLED: 'cancelled',
   })[invoice.status] || 'scheduled';
 }
@@ -102,7 +119,7 @@ const transactionFilters = [
 ];
 
 function CartSection({ props }) {
-  const cartItems = props.isPreview === true ? list(props.previewCart) : [];
+  const cartItems = list(props.kumpulPage && props.kumpulPage.cart);
   const displayCount = cartItems
     .filter((item) => item.kind !== 'gathering_plan')
     .reduce((count, item) => count + (Number(item.quantity) || 1), 0);
@@ -149,6 +166,7 @@ function CartSection({ props }) {
                     defaultChecked: canCheckout,
                     disabled: !canCheckout,
                     'data-cart-select': '',
+                    ...(canCheckout && item.key ? { 'data-bagdja-selectable': '', 'data-bagdja-key': item.key } : {}),
                     'aria-label': canCheckout ? `Pilih ${text(item.name, 'item keranjang')}` : `${text(item.name, 'Item')} belum bisa checkout`,
                   }),
                 ),
@@ -172,13 +190,16 @@ function CartSection({ props }) {
                         type: 'button',
                         'aria-label': `Kurangi jumlah ${text(item.name, 'item')}`,
                         'data-cart-quantity-decrease': '',
-                        disabled: quantity <= 1,
+                        disabled: quantity <= 1 || item.quantity_editable === false,
+                        ...(item.key && quantity > 1 ? intentAttributes('cart.set_quantity', item.key, { 'data-bagdja-quantity': String(quantity - 1) }) : {}),
                       }, '−'),
                       h('span', { 'data-cart-quantity' : '' }, String(quantity)),
                       h('button', {
                         type: 'button',
                         'aria-label': `Tambah jumlah ${text(item.name, 'item')}`,
                         'data-cart-quantity-increase': '',
+                        disabled: item.quantity_editable === false || (Number(item.max_quantity) > 0 && quantity >= Number(item.max_quantity)),
+                        ...(item.key ? intentAttributes('cart.set_quantity', item.key, { 'data-bagdja-quantity': String(quantity + 1) }) : {}),
                       }, '+'),
                     )
                     : null,
@@ -186,6 +207,7 @@ function CartSection({ props }) {
                     type: 'button',
                     className: 'kumpul-cart-remove',
                     'data-cart-remove': '',
+                    ...(item.key ? intentAttributes('cart.remove', item.key) : {}),
                     'aria-label': `Hapus ${text(item.name, 'item')}`,
                   }, 'Hapus'),
                 ),
@@ -203,7 +225,7 @@ function CartSection({ props }) {
               h('span', null, 'Total sementara'),
               h('strong', { 'data-cart-selected-total': '' }, 'Rp 0'),
             ),
-            h('button', { type: 'button', className: 'kumpul-cart-checkout', disabled: true }, 'Lanjut ke Checkout'),
+            h('button', { type: 'button', className: 'kumpul-cart-checkout', disabled: !intentEnabled(props, 'cart.checkout'), ...intentAttributes('cart.checkout') }, 'Lanjut ke Checkout'),
             h('p', null, 'Item yang belum dapat dibayar akan tetap tersimpan di keranjang.'),
           ),
         ),
@@ -241,7 +263,7 @@ function transactionStatus(transaction) {
 }
 
 function TransactionsSection({ props }) {
-  const transactions = props.isPreview === true ? list(props.previewTransactions) : [];
+  const transactions = list(props.kumpulPage && props.kumpulPage.transactions);
   const counts = Object.fromEntries(transactionFilters.map(([key]) => [
     key,
     key === 'all' ? transactions.length : transactions.filter((transaction) => transactionStatus(transaction).filter === key).length,
@@ -312,11 +334,15 @@ function TransactionsSection({ props }) {
           ),
         ),
         h('div', { className: 'kumpul-transaction-actions' },
-          transaction.status === 'PENDING_PAYMENT'
-            ? h('button', { type: 'button', disabled: true }, 'Lanjutkan Pembayaran')
+          transaction.status === 'PENDING_PAYMENT' && transaction.detail_href
+            ? h('a', { className: 'kumpul-transaction-action-link', href: transaction.detail_href }, 'Lanjutkan Pembayaran')
             : null,
-          h('button', { type: 'button', disabled: true }, 'Detail Transaksi'),
-          h('button', { type: 'button', disabled: true }, 'Chat Order'),
+          transaction.detail_href
+            ? h('a', { className: 'kumpul-transaction-action-link', href: transaction.detail_href }, 'Detail Transaksi')
+            : h('button', { type: 'button', disabled: true }, 'Detail Transaksi'),
+          props.auth && props.auth.chatHref
+            ? h('a', { className: 'kumpul-transaction-action-link', href: props.auth.chatHref }, 'Chat Order')
+            : h('button', { type: 'button', disabled: true }, 'Chat Order'),
         ),
         );
       }),
@@ -347,13 +373,13 @@ function invoiceDetailStatus(invoice) {
 }
 
 function InvoiceDetailSection({ props }) {
-  if (props.isPreview !== true) {
+  const invoice = props.kumpulPage && props.kumpulPage.invoice;
+  if (!invoice) {
     return h('section', { className: 'kumpul-detail-page', 'data-invoice-detail': '' },
       h('h1', null, 'Detail Tagihan'),
       h('p', null, 'Data tagihan dan status pembayaran dikelola oleh host Bagdja.'),
     );
   }
-  const invoice = props.isPreview === true ? props.previewInvoice || {} : {};
   const status = invoiceDetailStatus(invoice);
   const amount = new Intl.NumberFormat('id-ID', {
     style: 'currency',
@@ -414,20 +440,26 @@ function InvoiceDetailSection({ props }) {
             h('p', null, 'Akun Bagdja menghubungkan pembayaran escrow dengan peserta. Gunakan email yang sama dengan email saat RSVP. Initiator juga dapat membayar beberapa tagihan dari halaman gathering.'),
           )
           : null,
-        !isPaid
-          ? h('button', { type: 'button', disabled: props.isPreview === true || !paymentOpen },
-            paymentOpen ? (isPending ? 'Lanjutkan pembayaran' : 'Login untuk membayar') : 'Pembayaran belum dibuka',
-          )
-          : null,
+        !isPaid && paymentOpen && invoice.login_required && props.auth && props.auth.loginHref
+          ? h('a', { className: 'kumpul-detail-pay-link', href: props.auth.loginHref }, 'Login untuk membayar')
+          : !isPaid
+            ? h('button', {
+              type: 'button',
+              disabled: !paymentOpen || !intentEnabled(props, 'invoice.pay'),
+              ...intentAttributes('invoice.pay', invoice.key),
+            },
+            paymentOpen ? (isPending ? 'Lanjutkan pembayaran' : 'Bayar sekarang') : 'Pembayaran belum dibuka',
+            )
+            : null,
       ),
     ),
   );
 }
 
 function TransactionDetailSection({ props, section }) {
-  const transaction = props.isPreview === true
-    ? props.previewTransaction || {}
-    : section?.content?.transaction || {};
+  const transaction = (props.kumpulPage && props.kumpulPage.transaction)
+    || (section && section.content && section.content.transaction)
+    || {};
   const items = list(transaction.items);
   const status = transactionStatus(transaction);
   const subtotal = items.reduce((sum, item) => sum + (Number(item.total_amount) || 0), 0);
@@ -523,7 +555,8 @@ function TransactionDetailSection({ props, section }) {
         ),
         transaction.status === 'PENDING_PAYMENT' || transaction.status === 'PENDING'
           ? h(React.Fragment, null,
-            h('button', { type: 'button', disabled: true }, 'Lanjutkan Pembayaran'),
+            // order.* memakai jalur aksi transaksi host yang sudah ada (data-bagdja-action).
+            h('button', { type: 'button', disabled: !intentEnabled(props, 'order.retry_payment'), 'data-bagdja-action': 'order.retry_payment' }, 'Lanjutkan Pembayaran'),
             transaction.payment_mode === 'ESCROW'
               ? h('p', { className: 'kumpul-detail-payment-note' }, 'Dana escrow disimpan sampai proses konfirmasi pesanan selesai.')
               : null,
@@ -560,7 +593,7 @@ function GatheringPlanSimulator({ plan, props }) {
   const occurrence = plan.occurrence || {};
   const options = list(occurrence.option_groups_snapshot);
   const openedIds = new Set(list(occurrence.opened_option_ids_snapshot));
-  const invitees = list(props.previewPlanInvitees);
+  const invitees = list(props.kumpulPage && props.kumpulPage.invitees);
   const localDatePart = (value) => typeof value === 'string' ? value.slice(0, 10) : '';
   const localTimePart = (value) => typeof value === 'string' ? value.slice(11, 16) : '';
 
@@ -756,12 +789,8 @@ function GatheringPlanSimulator({ plan, props }) {
 
 function GatheringPlanDetailSection({ props, section }) {
   const sectionContent = section?.content || {};
-  const plan = props.isPreview === true
-    ? props.previewGatheringPlan || {}
-    : sectionContent.gatheringPlan || {};
-  const order = props.isPreview === true
-    ? props.previewGatheringOrder || {}
-    : sectionContent.order || {};
+  const plan = (props.kumpulPage && props.kumpulPage.plan) || sectionContent.gatheringPlan || {};
+  const order = sectionContent.order || {};
   const occurrence = plan.occurrence || {};
   const openedIds = new Set(list(occurrence.opened_option_ids_snapshot));
   const openedOptions = list(occurrence.option_groups_snapshot)
@@ -892,7 +921,7 @@ function GatheringPlanDetailSection({ props, section }) {
 }
 
 function BillingSection({ props }) {
-  const previewInvoices = props.isPreview === true ? list(props.previewInvoices) : [];
+  const previewInvoices = list(props.kumpulPage && props.kumpulPage.invoices);
   const outstandingCount = previewInvoices.filter((invoice) => billingStatus(invoice) === 'issued').length;
   const counts = Object.fromEntries(billingFilters.map(([key]) => [
     key,
@@ -967,9 +996,16 @@ function BillingSection({ props }) {
               h('strong', null, formatCurrency(invoice.amount)),
               dueDate ? h('p', null, `Batas pembayaran · ${formatCalendarDate(dueDate)}`) : null,
             ),
-            status === 'issued'
-              ? h('button', { type: 'button', className: 'kumpul-billing-action', disabled: true }, isGathering ? 'Lihat detail tagihan' : 'Bayar')
-              : null,
+            status === 'issued' && isGathering && invoice.detail_href
+              ? h('a', { className: 'kumpul-billing-action', href: invoice.detail_href }, 'Lihat detail tagihan')
+              : status === 'issued'
+                ? h('button', {
+                  type: 'button',
+                  className: 'kumpul-billing-action',
+                  disabled: !invoice.can_pay || !intentEnabled(props, 'invoice.pay'),
+                  ...intentAttributes('invoice.pay', invoice.key),
+                }, isGathering ? 'Lihat detail tagihan' : 'Bayar')
+                : null,
           ),
           );
         }),
@@ -1415,8 +1451,8 @@ function calendarMonthCells(monthKey, events, selectedDate) {
 function CalendarSection({ props, section }) {
   const content = section?.content || {};
   const isPreview = props.isPreview === true;
-  const plans = isPreview ? list(content.preview_plans) : [];
-  const invitations = isPreview ? list(content.preview_invitations) : [];
+  const plans = list(content.plans);
+  const invitations = list(content.invitations);
   const attentionCount = invitations.filter((invitation) => invitation.needs_action === true).length;
   const events = [
     ...plans.filter((plan) => calendarDateKey(plan.event_date)).map((plan) => ({
@@ -1438,7 +1474,7 @@ function CalendarSection({ props, section }) {
       location: text(invitation.event_location),
     })),
   ].sort((left, right) => new Date(left.event_date).getTime() - new Date(right.event_date).getTime());
-  const initialMonth = calendarMonthKey(content.preview_month, events[0]?.event_date);
+  const initialMonth = calendarMonthKey(content.month, events[0]?.event_date);
   const initialDate = events.find((event) => calendarDateKey(event.event_date).startsWith(`${initialMonth}-`));
   const selectedDate = initialDate ? calendarDateKey(initialDate.event_date) : `${initialMonth}-01`;
   const monthLabel = formatCalendarDate(`${initialMonth}-01`, { month: 'long', year: 'numeric' });
@@ -1607,7 +1643,9 @@ function CalendarSection({ props, section }) {
             ? h('p', { className: 'kumpul-calendar-meta' }, `Batas pembayaran: ${formatCalendarDate(plan.payment_deadline)}`)
             : null,
         ),
-        h('button', { type: 'button', className: 'kumpul-calendar-action', disabled: true }, 'Lanjutkan rencana'),
+        plan.detail_href
+          ? h('a', { className: 'kumpul-calendar-action', href: plan.detail_href }, 'Lanjutkan rencana')
+          : h('button', { type: 'button', className: 'kumpul-calendar-action', disabled: true }, 'Lanjutkan rencana'),
         )),
         h('p', {
           className: 'kumpul-calendar-empty',
@@ -1645,7 +1683,14 @@ function CalendarSection({ props, section }) {
         ),
         h('div', { className: 'kumpul-calendar-invitation-action' },
           invitation.action_label ? h('span', null, invitation.action_label) : null,
-          h('button', { type: 'button', className: 'kumpul-calendar-action', disabled: true }, 'Lihat undangan'),
+          invitation.detail_href
+            ? h('a', { className: 'kumpul-calendar-action', href: invitation.detail_href }, 'Lihat undangan')
+            : h('button', {
+              type: 'button',
+              className: 'kumpul-calendar-action',
+              disabled: !invitation.key || !intentEnabled(props, 'gathering.respond'),
+              ...(invitation.key ? intentAttributes('gathering.respond', invitation.key) : {}),
+            }, 'Lihat undangan'),
         ),
         )),
         h('p', {
@@ -1926,7 +1971,7 @@ function styles(colors) {
     .kumpul-cart.is-empty .kumpul-cart-select-all,.kumpul-cart.is-empty .kumpul-cart-summary{display:none}.kumpul-cart.is-empty .kumpul-cart-layout{grid-template-columns:1fr}
     @media(max-width:760px){.kumpul-cart-layout{grid-template-columns:1fr;gap:15px}.kumpul-cart-item{grid-template-columns:20px 52px minmax(0,1fr);gap:10px;padding:12px}.kumpul-cart-art{width:52px;height:52px;border-radius:12px;font-size:23px}.kumpul-cart-copy h2{font-size:11px}.kumpul-cart-item-controls{grid-column:3;min-width:0;width:100%;display:flex;align-items:center;justify-content:space-between;gap:8px}.kumpul-cart-price{margin-right:auto;font-size:12px}.kumpul-cart-summary{position:static}.kumpul-cart-heading h1{font-size:32px}}
     .kumpul-transactions{max-width:980px;margin:0 auto}.kumpul-transactions-heading{display:flex;align-items:flex-end;justify-content:space-between;gap:24px}.kumpul-transactions-heading h1{margin:0;color:var(--kt-text);font-size:clamp(30px,4vw,42px);line-height:1.15;letter-spacing:-.04em}.kumpul-transactions-heading>div:first-child>p:last-child{margin:9px 0 0;color:var(--kt-muted);font-size:13px}.kumpul-transactions-total{padding:13px 16px;display:grid;gap:2px;border:1px solid var(--kt-border);border-radius:15px;background:var(--kt-surface)}.kumpul-transactions-total strong{font-size:21px;line-height:1.1}.kumpul-transactions-total span{color:var(--kt-muted);font-size:10px}.kumpul-transactions-preview-note{margin:20px 0 0;padding:11px 14px;border:1px solid var(--kt-border);border-radius:12px;background:var(--kt-surface);color:var(--kt-muted);font-size:11px}.kumpul-transactions-filters{margin:25px 0 22px;padding-bottom:7px;display:flex;gap:8px;overflow-x:auto;border-bottom:1px solid var(--kt-border);scrollbar-width:thin}.kumpul-transactions-filters button{padding:9px 12px;display:inline-flex;align-items:center;gap:8px;border:1px solid transparent;border-radius:11px 11px 0 0;background:transparent;color:var(--kt-muted);font:inherit;font-size:11px;font-weight:700;white-space:nowrap;cursor:pointer}.kumpul-transactions-filters button[aria-pressed=true]{border-color:var(--kt-border);border-bottom-color:var(--kt-surface);background:var(--kt-surface);color:var(--kt-accent)}.kumpul-transactions-filters button span{min-width:20px;height:20px;padding:2px 6px;display:grid;place-items:center;border-radius:99px;background:var(--kt-bg);color:var(--kt-muted);font-size:9px}.kumpul-transactions-list{display:grid;gap:12px}.kumpul-transaction-card{overflow:hidden;border:1px solid var(--kt-border);border-radius:16px;background:var(--kt-surface)}.kumpul-transaction-top{padding:13px 18px;display:flex;align-items:center;justify-content:space-between;gap:12px;border-bottom:1px solid #e8f0f2}.kumpul-transaction-top>div{display:flex;align-items:center;gap:8px;color:var(--kt-muted);font-size:10px}.kumpul-transaction-ref{color:var(--kt-text);font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-weight:750}.kumpul-transaction-status{padding:6px 9px;flex:none;border-radius:99px;font-size:9px;font-weight:800}.kumpul-transaction-status-warning{background:#fff4da;color:#a15c00}.kumpul-transaction-status-info{background:#e8f2ff;color:#2563eb}.kumpul-transaction-status-success{background:#e5f7ef;color:#08734f}.kumpul-transaction-status-danger{background:#ffeded;color:#b91c1c}.kumpul-transaction-status-muted{background:#eef1f4;color:#64748b}.kumpul-transaction-body{padding:16px 18px;display:flex;align-items:center;justify-content:space-between;gap:20px}.kumpul-transaction-item{min-width:0;display:flex;align-items:center;gap:13px}.kumpul-transaction-art{width:58px;height:58px;flex:none;display:grid;place-items:center;border:1px solid var(--kt-border);border-radius:14px;background:var(--kt-bg);color:var(--kt-accent);font-size:26px}.kumpul-transaction-item>div{min-width:0}.kumpul-transaction-item h2{margin:0;font-size:13px}.kumpul-transaction-item p{margin:5px 0 0;color:var(--kt-muted);font-size:10px}.kumpul-transaction-total{flex:none;text-align:right}.kumpul-transaction-total span{display:block;color:var(--kt-muted);font-size:10px}.kumpul-transaction-total strong{display:block;margin-top:3px;font-size:16px}.kumpul-transaction-actions{padding:0 18px 15px;display:flex;justify-content:flex-end;gap:8px}.kumpul-transaction-actions button{min-height:34px;padding:7px 11px;border:1px solid var(--kt-border);border-radius:10px;background:var(--kt-surface);color:var(--kt-text);font:inherit;font-size:9px;font-weight:750;opacity:.62;cursor:not-allowed}.kumpul-transaction-actions button:disabled{opacity:.62}.kumpul-transactions-empty{margin:0;padding:32px 18px;border:1px dashed var(--kt-border);border-radius:15px;color:var(--kt-muted);font-size:12px;text-align:center}
-    @media(max-width:700px){.kumpul-transactions-heading{align-items:flex-start;flex-direction:column;gap:16px}.kumpul-transactions-total{width:100%;padding:11px 13px}.kumpul-transactions-total strong{font-size:18px}.kumpul-transactions-filters{margin-top:20px}.kumpul-transaction-top{align-items:flex-start;padding:12px 14px}.kumpul-transaction-top>div{flex-wrap:wrap;gap:5px;font-size:9px}.kumpul-transaction-status{max-width:120px;white-space:normal;text-align:center}.kumpul-transaction-body{align-items:flex-start;padding:14px;gap:10px}.kumpul-transaction-art{width:44px;height:44px;border-radius:12px;font-size:20px}.kumpul-transaction-item{gap:9px}.kumpul-transaction-item h2{font-size:11px}.kumpul-transaction-total strong{font-size:13px}.kumpul-transaction-actions{padding:0 14px 13px;flex-wrap:wrap}.kumpul-transaction-actions button{flex:1;padding:7px 8px;font-size:8px}}
+    @media(max-width:700px){.kumpul-transactions-heading{align-items:flex-start;flex-direction:column;gap:16px}.kumpul-transactions-total{width:100%;padding:11px 13px}.kumpul-transactions-total strong{font-size:18px}.kumpul-transactions-filters{margin-top:20px}.kumpul-transaction-top{align-items:flex-start;padding:12px 14px}.kumpul-transaction-top>div{flex-wrap:wrap;gap:5px;font-size:9px}.kumpul-transaction-status{max-width:120px;white-space:normal;text-align:center}.kumpul-transaction-body{align-items:flex-start;padding:14px;gap:10px}.kumpul-transaction-art{width:44px;height:44px;border-radius:12px;font-size:20px}.kumpul-transaction-item{gap:9px}.kumpul-transaction-item h2{font-size:11px}.kumpul-transaction-total strong{font-size:13px}.kumpul-transaction-actions{padding:0 14px 13px;flex-wrap:wrap}.kumpul-transaction-actions button,.kumpul-transaction-actions .kumpul-transaction-action-link{flex:1;padding:7px 8px;font-size:8px}}
     .kumpul-billing{max-width:980px;margin:0 auto}.kumpul-billing-heading{display:flex;align-items:flex-end;justify-content:space-between;gap:24px}.kumpul-billing-heading h1{margin:0;color:var(--kt-text);font-size:clamp(30px,4vw,42px);line-height:1.15;letter-spacing:-.04em}.kumpul-billing-description{margin:9px 0 0;color:var(--kt-muted);font-size:13px}.kumpul-billing-summary{display:flex;gap:10px}.kumpul-billing-summary-card{min-width:132px;padding:13px 16px;display:grid;gap:2px;border:1px solid var(--kt-border);border-radius:15px;background:var(--kt-surface)}.kumpul-billing-summary-card strong{font-size:21px;line-height:1.1}.kumpul-billing-summary-card span{color:var(--kt-muted);font-size:10px}.kumpul-billing-preview-note{margin:20px 0 0;padding:11px 14px;border:1px solid var(--kt-border);border-radius:12px;background:var(--kt-surface);color:var(--kt-muted);font-size:11px}.kumpul-billing-filters{margin:25px 0 22px;padding-bottom:7px;display:flex;gap:8px;overflow-x:auto;border-bottom:1px solid var(--kt-border);scrollbar-width:thin}.kumpul-billing-filters button{padding:9px 12px;display:inline-flex;align-items:center;gap:8px;border:1px solid transparent;border-radius:11px 11px 0 0;background:transparent;color:var(--kt-muted);font:inherit;font-size:11px;font-weight:700;white-space:nowrap;cursor:pointer}.kumpul-billing-filters button[aria-pressed=true]{border-color:var(--kt-border);border-bottom-color:var(--kt-surface);background:var(--kt-surface);color:var(--kt-accent)}.kumpul-billing-filters button span{min-width:20px;height:20px;padding:2px 6px;display:grid;place-items:center;border-radius:99px;background:var(--kt-bg);color:var(--kt-muted);font-size:9px}.kumpul-billing-results-heading{margin-bottom:12px;display:flex;align-items:baseline;justify-content:space-between;gap:12px}.kumpul-billing-results-heading h2{margin:0;font-size:16px}.kumpul-billing-results-heading span{color:var(--kt-muted);font-size:11px}.kumpul-billing-list{display:grid;gap:12px}.kumpul-billing-card{overflow:hidden;border:1px solid var(--kt-border);border-radius:16px;background:var(--kt-surface)}.kumpul-billing-card-top{padding:17px 19px;display:flex;align-items:flex-start;justify-content:space-between;gap:16px;border-bottom:1px solid #e8f0f2}.kumpul-billing-kind{color:var(--kt-accent);font-size:9px;font-weight:800;letter-spacing:.1em;text-transform:uppercase}.kumpul-billing-card h3{margin:4px 0 0;font-size:14px}.kumpul-billing-card-top p{margin:5px 0 0;color:var(--kt-muted);font-size:10px}.kumpul-billing-status{padding:6px 9px;flex:none;border-radius:99px;font-size:9px;font-weight:800}.kumpul-billing-status-warning{background:#fff4da;color:#a15c00}.kumpul-billing-status-success{background:#e5f7ef;color:#08734f}.kumpul-billing-status-muted{background:#eef1f4;color:#64748b}.kumpul-billing-card-bottom{padding:14px 19px;display:flex;align-items:center;justify-content:space-between;gap:16px}.kumpul-billing-card-bottom strong{font-size:17px;color:var(--kt-accent)}.kumpul-billing-card-bottom p{margin:4px 0 0;color:var(--kt-muted);font-size:10px}.kumpul-billing-action{min-height:36px;padding:8px 13px;border:0;border-radius:10px;background:var(--kt-accent);color:#fff;font:inherit;font-size:10px;font-weight:750;opacity:.62;cursor:not-allowed}.kumpul-billing-empty{margin:0;padding:32px 18px;border:1px dashed var(--kt-border);border-radius:15px;color:var(--kt-muted);font-size:12px;text-align:center}
     @media(max-width:700px){.kumpul-billing-heading{align-items:flex-start;flex-direction:column;gap:16px}.kumpul-billing-summary{width:100%}.kumpul-billing-summary-card{min-width:0;flex:1;padding:11px 13px}.kumpul-billing-summary-card strong{font-size:18px}.kumpul-billing-filters{margin-top:20px}.kumpul-billing-card-top{padding:15px;gap:10px}.kumpul-billing-card h3{font-size:13px}.kumpul-billing-status{max-width:120px;white-space:normal;text-align:center}.kumpul-billing-card-bottom{padding:13px 15px}.kumpul-billing-card-bottom strong{font-size:15px}}
     .kumpul-calendar-agenda:not([open]){display:none}.kumpul-calendar-agenda[open]{position:fixed;inset:50% auto auto 50%;z-index:10;width:min(560px,calc(100vw - 32px));max-height:calc(100dvh - 48px);margin:0;padding:0;display:flex;flex-direction:column;transform:translate(-50%,-50%);overflow:hidden;border:1px solid var(--kt-border);border-radius:22px;background:var(--kt-bg);color:var(--kt-text);box-shadow:0 24px 80px #0f172a45}.kumpul-calendar-agenda::backdrop{background:rgb(15 23 42 / 45%);backdrop-filter:blur(2px)}.kumpul-calendar-agenda-handle{display:none}.kumpul-calendar-agenda-heading{padding:22px 24px 16px;display:flex;align-items:flex-start;justify-content:space-between;gap:16px;border-bottom:1px solid var(--kt-border)}.kumpul-calendar-agenda-heading .kumpul-eyebrow{margin:0 0 4px}.kumpul-calendar-agenda-heading h2{margin:0;font-size:20px;text-transform:capitalize}.kumpul-calendar-agenda-close{width:36px;height:36px;flex:none;border:1px solid var(--kt-border);border-radius:50%;background:var(--kt-surface);color:var(--kt-text);font:inherit;font-size:22px;line-height:1;cursor:pointer}.kumpul-calendar-agenda-content{min-height:0;padding:18px 24px 24px;overflow:auto;overscroll-behavior:contain}.kumpul-calendar-agenda-list{display:grid;gap:10px}.kumpul-calendar-empty{margin:0;padding:18px;border:1px dashed var(--kt-border);border-radius:14px;color:var(--kt-muted);font-size:13px;text-align:center}
@@ -1972,21 +2017,44 @@ function styles(colors) {
     .kumpul-plan-simulator{margin-top:18px;padding:20px;border:1px solid var(--kt-border);border-radius:18px;background:var(--kt-surface);box-shadow:0 8px 26px #0f172a0a}.kumpul-plan-simulator-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:16px}.kumpul-plan-simulator-heading h2{margin:0;font-size:19px;letter-spacing:-.025em}.kumpul-plan-simulator-heading .kumpul-eyebrow{margin-bottom:7px}.kumpul-plan-simulator-heading>div>p:last-child{margin:7px 0 0;color:var(--kt-muted);font-size:10px;line-height:1.55}.kumpul-plan-simulation-badge{padding:6px 9px;flex:none;border-radius:99px;background:#e6f4f6;color:var(--kt-accent);font-size:8px;font-weight:800}.kumpul-plan-simulation-note{margin:15px 0;padding:10px 12px;border:1px solid var(--kt-border);border-radius:10px;background:var(--kt-bg);color:var(--kt-muted);font-size:9px;line-height:1.55}.kumpul-plan-sim-steps{margin:17px 0 0;padding:0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));list-style:none}.kumpul-plan-sim-steps li{min-width:0;border-top:2px solid var(--kt-border)}.kumpul-plan-sim-steps li.is-current,.kumpul-plan-sim-steps li.is-complete{border-color:var(--kt-accent)}.kumpul-plan-sim-steps button{width:100%;padding:10px 5px 4px;display:flex;align-items:center;gap:6px;border:0;background:none;color:var(--kt-muted);font:inherit;font-size:8px;font-weight:750;text-align:left}.kumpul-plan-sim-steps li.is-current button,.kumpul-plan-sim-steps li.is-complete button{color:var(--kt-text)}.kumpul-plan-sim-steps button:disabled{cursor:not-allowed;opacity:.65}.kumpul-plan-sim-steps button:not(:disabled){cursor:pointer}.kumpul-plan-sim-steps button>span:first-child{width:20px;height:20px;flex:none;display:grid;place-items:center;border:1px solid var(--kt-border);border-radius:50%;font-size:8px}.kumpul-plan-sim-steps li.is-current button>span:first-child,.kumpul-plan-sim-steps li.is-complete button>span:first-child{border-color:var(--kt-accent);background:var(--kt-accent);color:#fff}.kumpul-plan-sim-panel{margin-top:17px}.kumpul-plan-sim-panel[hidden],.kumpul-plan-sim-complete[hidden]{display:none}.kumpul-plan-sim-panel h3,.kumpul-plan-sim-complete h3{margin:0;font-size:15px}.kumpul-plan-sim-help{margin:6px 0 14px;color:var(--kt-muted);font-size:9px;line-height:1.5}.kumpul-plan-sim-form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px}.kumpul-plan-sim-form label,.kumpul-plan-sim-invite-form label,.kumpul-plan-sim-person>label{min-width:0;display:grid;gap:5px;color:var(--kt-muted);font-size:9px;font-weight:700}.kumpul-plan-sim-form input,.kumpul-plan-sim-form select,.kumpul-plan-sim-invite-form input,.kumpul-plan-sim-invitees input,.kumpul-plan-sim-person select{width:100%;min-width:0;min-height:37px;padding:8px 9px;border:1px solid var(--kt-border);border-radius:9px;background:#fff;color:var(--kt-text);font:inherit;font-size:10px}.kumpul-plan-sim-options{min-width:0;margin:15px 0 0;padding:11px;border:1px solid var(--kt-border);border-radius:11px}.kumpul-plan-sim-options legend{padding:0 5px;color:var(--kt-text);font-size:10px;font-weight:800}.kumpul-plan-sim-option{margin:5px 10px 5px 0;display:inline-flex;align-items:center;gap:6px;color:var(--kt-muted);font-size:9px}.kumpul-plan-sim-option input{accent-color:var(--kt-accent)}.kumpul-plan-sim-actions{margin-top:15px;display:flex;justify-content:flex-end;gap:8px}.kumpul-plan-sim-actions button,.kumpul-plan-sim-invite-form button,.kumpul-plan-sim-invitees button,.kumpul-plan-sim-payment button,.kumpul-plan-sim-complete button{min-height:36px;padding:8px 12px;border:1px solid var(--kt-border);border-radius:9px;background:#fff;color:var(--kt-text);font:inherit;font-size:9px;font-weight:800;cursor:pointer}.kumpul-plan-sim-actions .kumpul-plan-sim-primary{border-color:var(--kt-accent);background:var(--kt-accent);color:#fff}.kumpul-plan-sim-actions .kumpul-plan-sim-secondary{color:var(--kt-accent)}.kumpul-plan-sim-error{margin:12px 0 0;color:#b91c1c;font-size:9px;font-weight:700}.kumpul-plan-sim-invite-form{display:grid;grid-template-columns:1fr 1fr auto;align-items:end;gap:9px}.kumpul-plan-sim-invitees{margin:12px 0 0;padding:0;display:grid;gap:7px;list-style:none}.kumpul-plan-sim-invitees li{display:flex;align-items:center;gap:8px}.kumpul-plan-sim-invitees li>div{flex:1;display:grid;grid-template-columns:1fr 1fr;gap:8px}.kumpul-plan-sim-invitees button,.kumpul-plan-sim-payment button{min-height:33px;padding:7px 9px;color:var(--kt-accent)}.kumpul-plan-sim-participants,.kumpul-plan-sim-payments{display:grid;gap:9px}.kumpul-plan-sim-person{padding:12px;display:grid;grid-template-columns:minmax(0,1fr) 170px;align-items:center;gap:11px;border:1px solid var(--kt-border);border-radius:12px;background:var(--kt-bg)}.kumpul-plan-sim-person-heading{min-width:0;display:grid;gap:3px}.kumpul-plan-sim-person-heading strong{font-size:10px}.kumpul-plan-sim-person-heading span{overflow-wrap:anywhere;color:var(--kt-muted);font-size:8px}.kumpul-plan-sim-person-options{grid-column:1/-1;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.kumpul-plan-sim-payment{grid-template-columns:minmax(0,1fr) auto}.kumpul-plan-sim-payment[data-sim-paid=true]{border-color:var(--kt-success);background:#effaf5}.kumpul-plan-sim-final-group{margin:7px 0 0;padding:8px;border:1px solid var(--kt-border);border-radius:9px}.kumpul-plan-sim-final-group legend{padding:0 4px;font-size:9px;font-weight:800}.kumpul-plan-sim-final-group label{margin:5px 10px 5px 0;display:inline-flex;align-items:center;gap:6px;color:var(--kt-muted);font-size:9px}.kumpul-plan-sim-final-group input{accent-color:var(--kt-accent)}.kumpul-plan-sim-complete{margin-top:18px;padding:22px;border:1px solid #8bd1ae;border-radius:13px;background:#effaf5;text-align:center}.kumpul-plan-sim-complete>span{width:34px;height:34px;margin:0 auto 9px;display:grid;place-items:center;border-radius:50%;background:var(--kt-success);color:#fff;font-weight:900}.kumpul-plan-sim-complete p{margin:7px 0 13px;color:var(--kt-muted);font-size:9px;line-height:1.5}
     @media(max-width:760px){.kumpul-plan-heading{flex-direction:column;gap:12px}.kumpul-plan-workflow{padding:14px}.kumpul-plan-workflow ol{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.kumpul-plan-workflow li{padding:9px 5px 0;font-size:8px}.kumpul-plan-layout{grid-template-columns:1fr;gap:13px}.kumpul-plan-aside{position:static}.kumpul-plan-simulator{padding:15px}.kumpul-plan-simulator-heading{flex-direction:column;gap:10px}.kumpul-plan-sim-form{grid-template-columns:1fr}.kumpul-plan-sim-invite-form{grid-template-columns:1fr}.kumpul-plan-sim-invite-form button{width:100%}.kumpul-plan-sim-invitees li{align-items:flex-start;flex-direction:column}.kumpul-plan-sim-invitees li>div{width:100%;grid-template-columns:1fr}.kumpul-plan-sim-invitees button{align-self:flex-end}.kumpul-plan-sim-person{grid-template-columns:1fr}.kumpul-plan-sim-person-options{grid-template-columns:1fr}.kumpul-plan-sim-payment{grid-template-columns:1fr}.kumpul-plan-sim-payment button{width:100%}.kumpul-plan-sim-steps button{align-items:flex-start;flex-direction:column;font-size:7px}.kumpul-plan-sim-actions{flex-wrap:wrap}.kumpul-plan-sim-actions button{flex:1}}
     @media(max-width:760px){.kumpul-detail-heading{align-items:flex-start;flex-direction:column}.kumpul-detail-layout{grid-template-columns:1fr;gap:13px}.kumpul-detail-aside{position:static}.kumpul-detail-card{padding:16px}.kumpul-detail-fields{gap:13px}.kumpul-detail-total strong{font-size:19px}.kumpul-detail-item{grid-template-columns:40px minmax(0,1fr);gap:10px}.kumpul-detail-item-art{width:40px;height:40px}.kumpul-detail-item>strong{grid-column:2}.kumpul-detail-page .kumpul-detail-preview-note{font-size:9px}}
+    .kumpul-transaction-actions .kumpul-transaction-action-link{display:inline-flex;min-height:34px;align-items:center;justify-content:center;padding:7px 11px;border:1px solid var(--kt-border);border-radius:10px;background:var(--kt-surface);color:var(--kt-text);font-size:9px;font-weight:750;text-decoration:none}
+    .kumpul-transaction-actions .kumpul-transaction-action-link:hover{border-color:var(--kt-accent);color:var(--kt-accent)}
+    a.kumpul-billing-action{display:inline-flex;align-items:center;text-decoration:none;opacity:1;cursor:pointer}
+    .kumpul-billing-action:not(:disabled),.kumpul-detail-aside>button:not(:disabled),.kumpul-cart-checkout:not(:disabled){opacity:1;cursor:pointer}
+    .kumpul-detail-aside>.kumpul-detail-pay-link{display:flex;width:100%;min-height:42px;margin-top:16px;align-items:center;justify-content:center;border-radius:11px;background:var(--kt-accent);color:#fff;font-size:11px;font-weight:800;text-decoration:none}
+    .kumpul-header-only .kumpul-header{position:static}
+    a.kumpul-calendar-action{display:inline-flex;align-items:center;justify-content:center;text-decoration:none;opacity:1;cursor:pointer}
     @media(max-width:900px){.kumpul-header-main{padding:12px 20px}.kumpul-utilities>a span{display:none}.kumpul-utilities>a{padding:9px}.kumpul-main{padding:24px 20px 60px}.kumpul-hero{grid-template-columns:1fr}.kumpul-hero-copy{padding:38px}.kumpul-feature-card{min-height:310px}.kumpul-about-section{grid-template-columns:1fr .8fr;gap:24px}.kumpul-about-art,.kumpul-about-image{min-height:230px}.kumpul-process-list{grid-template-columns:repeat(2,minmax(0,1fr))}.kumpul-process-step+.kumpul-process-step{border-left:0}.kumpul-process-step:nth-child(even){border-left:1px solid var(--kt-border)}.kumpul-process-step:nth-child(n+3){border-top:1px solid var(--kt-border)}.kumpul-gathering-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.kumpul-location-list{grid-template-columns:repeat(2,minmax(0,1fr))}.kumpul-category-filters{grid-template-columns:repeat(2,minmax(0,1fr))}.kumpul-calendar-heading{align-items:flex-start;flex-direction:column}.kumpul-calendar-stats{width:100%}.kumpul-cta{align-items:flex-start;flex-direction:column}}
     @media(max-width:620px){.kumpul-header-main{min-height:64px;padding:9px 16px}.kumpul-logo,.kumpul-logo-mark{width:40px;height:40px;border-radius:13px}.kumpul-brand-copy strong{font-size:15px}.kumpul-brand-copy small{font-size:8px}.kumpul-utilities{display:none}.kumpul-page-nav{min-height:47px;justify-content:flex-start;overflow-x:auto;padding:5px 12px}.kumpul-page-nav a{padding:7px 12px;font-size:11px}.kumpul-main{padding:16px 14px 98px}.kumpul-hero{border-radius:21px}.kumpul-hero-copy{padding:27px 22px}.kumpul-community-pill{margin-bottom:17px;font-size:9px}.kumpul-hero h1{font-size:clamp(39px,12vw,58px)}.kumpul-hero-description{margin-top:15px;font-size:13px}.kumpul-hero-actions{gap:8px;margin-top:19px}.kumpul-button{min-height:42px;padding:10px 13px;font-size:11px}.kumpul-stats{gap:20px;margin-top:22px}.kumpul-stat strong{font-size:18px}.kumpul-stat span{font-size:9px}.kumpul-feature-card{min-height:250px;padding:16px}.kumpul-feature-art>span{width:86px;height:86px;font-size:42px}.kumpul-about-section{margin-top:0;padding:22px;grid-template-columns:1fr;border-radius:21px}.kumpul-about-copy h1{font-size:clamp(34px,10vw,48px)}.kumpul-about-body{font-size:13px}.kumpul-about-art,.kumpul-about-image{min-height:230px}.kumpul-gallery-grid{grid-template-columns:repeat(2,minmax(0,1fr));grid-auto-rows:135px;gap:9px}.kumpul-gallery-item:nth-child(3n+2){grid-row:span 1}.kumpul-gallery-item:nth-child(4n+1){grid-row:span 2}.kumpul-gallery-item>span{font-size:38px}.kumpul-process-list{grid-template-columns:1fr}.kumpul-process-step{padding:14px;display:grid;grid-template-columns:34px 1fr;column-gap:12px}.kumpul-process-step+.kumpul-process-step,.kumpul-process-step:nth-child(even),.kumpul-process-step:nth-child(n+3){border-top:1px solid var(--kt-border);border-left:0}.kumpul-process-step .kumpul-flow-number{grid-row:span 2}.kumpul-process-step small{grid-column:2}.kumpul-section{margin-top:48px}.kumpul-section-heading .kumpul-section-title,.kumpul-cta h2{font-size:29px}.kumpul-section-description{font-size:12px}.kumpul-flow-list{grid-template-columns:1fr;border-radius:16px}.kumpul-flow-step{min-height:0;padding:13px 15px;display:grid;grid-template-columns:34px 1fr;column-gap:11px}.kumpul-flow-step+.kumpul-flow-step{border-top:1px solid var(--kt-border);border-left:0}.kumpul-flow-number{grid-row:span 2}.kumpul-flow-step strong{margin:0}.kumpul-flow-step>span:last-child{font-size:10px}.kumpul-section-topline{align-items:flex-start}.kumpul-text-link{margin-top:5px;font-size:10px}.kumpul-catalog-heading{align-items:stretch;flex-direction:column;gap:16px}.kumpul-catalog-search{width:100%;min-height:44px}.kumpul-category-filters{grid-template-columns:1fr 1fr;gap:8px}.kumpul-category-filter{padding:9px;gap:8px}.kumpul-category-icon{width:32px;height:32px}.kumpul-category-filter strong{font-size:10px}.kumpul-category-filter small{font-size:8px}.kumpul-gathering-grid{grid-template-columns:1fr;gap:12px}.kumpul-gathering-card{display:grid;grid-template-columns:112px 1fr}.kumpul-gathering-art{min-height:100%;}.kumpul-gathering-art>span:first-child{font-size:36px}.kumpul-card-content{min-width:0;padding:12px}.kumpul-card-content h3{font-size:13px}.kumpul-card-meta{font-size:9px}.kumpul-card-bottom{margin-top:9px;padding-top:8px}.kumpul-card-bottom strong{font-size:10px}.kumpul-card-bottom span{font-size:9px}.kumpul-calendar{margin-top:0}.kumpul-calendar-title{font-size:34px}.kumpul-calendar-description{font-size:12px}.kumpul-calendar-stats{gap:7px}.kumpul-calendar-stat{min-width:0;flex:1;padding:10px}.kumpul-calendar-stat strong{font-size:16px}.kumpul-calendar-stat span{font-size:9px}.kumpul-calendar-card{align-items:flex-start;flex-direction:column;padding:15px}.kumpul-calendar-invitation-action{width:100%;justify-items:start}.kumpul-calendar-action{min-height:36px}.kumpul-section-topline{align-items:flex-start}.kumpul-text-link{margin-top:5px;font-size:10px}.kumpul-testimonial-grid{grid-template-columns:1fr}.kumpul-location-list{grid-template-columns:1fr}.kumpul-cta{margin-top:48px;padding:25px 20px;border-radius:19px}.kumpul-cta-actions{width:100%}.kumpul-cta-actions .kumpul-button{flex:1}.kumpul-footer{padding:20px 15px 95px;flex-direction:column}.kumpul-mobile-dock{position:fixed;z-index:5;right:0;bottom:0;left:0;padding:9px 5px max(9px,env(safe-area-inset-bottom));display:flex;justify-content:space-around;border-top:1px solid var(--kt-border);background:#fffffff2;backdrop-filter:blur(14px)}.kumpul-mobile-dock a{min-width:0;display:grid;justify-items:center;gap:3px;color:var(--kt-muted);font-size:8px}.kumpul-mobile-dock .kumpul-icon{width:19px;height:19px}}
     @media(prefers-reduced-motion:reduce){.kumpul-template *{scroll-behavior:auto!important;transition:none!important}}
   `;
 }
 
-function render(props = {}) {
+function render(inputProps = {}) {
+  const kumpulPage = adaptPage(inputProps.page);
+  const props = kumpulPage ? { ...inputProps, kumpulPage } : inputProps;
   const colors = themeColors(props);
   const sections = list(props.sections);
+
+  // Header saja untuk halaman yang isinya masih dikelola Bagdja (mis. chat, checkout).
+  if (props.headerOnly === true) {
+    return h('div', { className: 'kumpul-template kumpul-header-only' },
+      h('style', { dangerouslySetInnerHTML: { __html: styles(colors) } }),
+      h(Header, { ...props, activePageSlug: '' }),
+    );
+  }
+
   const orderDetailSection = sections.find((section) => section?.type === 'order_detail');
-  const activePageSlug = orderDetailSection
-    ? orderDetailSection.content?.gatheringPlan ? 'plan-detail' : 'transaction-detail'
-    : ['cart', 'orders', 'tagihan', 'invoice-detail', 'transaction-detail', 'plan-detail'].includes(props.activePageSlug)
-      ? props.activePageSlug
-      : pageSlugForSections(sections);
+  const activePageSlug = kumpulPage
+    ? kumpulPage.activePageSlug
+    : orderDetailSection
+      ? orderDetailSection.content?.gatheringPlan ? 'plan-detail' : 'transaction-detail'
+      : ['cart', 'orders', 'tagihan', 'invoice-detail', 'transaction-detail', 'plan-detail'].includes(props.activePageSlug)
+        ? props.activePageSlug
+        : pageSlugForSections(sections);
+  const calendarPageSection = kumpulPage && kumpulPage.calendar
+    ? { id: 'kalender-acara', type: 'gathering_calendar', content: kumpulPage.calendar }
+    : null;
   const catalogPage = activePageSlug === 'gathering';
   const billingPage = activePageSlug === 'tagihan';
   const transactionsPage = activePageSlug === 'orders';
@@ -2013,7 +2081,9 @@ function render(props = {}) {
       gatherings ? h(GatheringsSection, { props, section: gatherings, catalogPage }) : null,
       sections.filter((section) => section?.type === 'service_process_section').map((section) => h(ProcessSection, { ...section, key: section.id || 'process' })),
       sections.filter((section) => section?.type === 'faq_list').map((section) => h(FaqSection, { props, section, key: section.id || 'faq' })),
-      sections.filter((section) => section?.type === 'gathering_calendar').map((section) => h(CalendarSection, { props, section, key: section.id || 'calendar' })),
+      calendarPageSection
+        ? h(CalendarSection, { props, section: calendarPageSection, key: 'calendar' })
+        : null,
       billingPage ? h(BillingSection, { props }) : null,
       transactionsPage ? h(TransactionsSection, { props }) : null,
       cartPage ? h(CartSection, { props }) : null,

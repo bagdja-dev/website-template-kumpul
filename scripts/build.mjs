@@ -1,8 +1,15 @@
-import { copyFile, mkdir } from 'node:fs/promises';
+import { mkdir } from 'node:fs/promises';
 import { build } from 'esbuild';
 
 await mkdir('dist', { recursive: true });
-await copyFile('src/server.cjs', 'dist/server.cjs');
+await build({
+  entryPoints: ['src/server.cjs'],
+  outfile: 'dist/server.cjs',
+  bundle: true,
+  platform: 'node',
+  format: 'cjs',
+  external: ['react'],
+});
 await build({
   entryPoints: ['src/client.js'],
   outfile: 'dist/client.js',

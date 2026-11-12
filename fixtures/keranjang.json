@@ -1,8 +1,10 @@
 {
   "isPreview": true,
-  "activePageSlug": "cart",
   "websiteSlug": "/kumpul-demo",
-  "profile": { "name": "Kumpul", "tagline": "Deep Teal • Family Trust" },
+  "profile": {
+    "name": "Kumpul",
+    "tagline": "Deep Teal • Family Trust"
+  },
   "templateTheme": {
     "colors": {
       "background": "#F0F7F8",
@@ -16,54 +18,33 @@
     }
   },
   "pages": [
-    { "slug": "home", "title": "Beranda", "isHome": true, "placement": "header" },
-    { "slug": "gathering", "title": "Katalog Gathering", "placement": "header" },
-    { "slug": "about", "title": "Tentang", "placement": "header" },
-    { "slug": "how-it-works", "title": "Cara Kerja", "placement": "header" }
+    {
+      "slug": "home",
+      "title": "Beranda",
+      "isHome": true,
+      "placement": "header"
+    },
+    {
+      "slug": "gathering",
+      "title": "Katalog Gathering",
+      "placement": "header"
+    },
+    {
+      "slug": "about",
+      "title": "Tentang",
+      "placement": "header"
+    },
+    {
+      "slug": "how-it-works",
+      "title": "Cara Kerja",
+      "placement": "header"
+    }
   ],
   "sections": [],
   "products": [],
   "categories": [],
   "locations": [],
   "faqs": [],
-  "previewCart": [
-    {
-      "id": "cart-family-camp",
-      "kind": "seat",
-      "name": "Family Camp Lembang",
-      "category": "Gathering keluarga",
-      "subtitle": "12 Desember 2026 · Lembang, Bandung",
-      "variant": "Tiket keluarga · 2 peserta",
-      "emoji": "⌂",
-      "price": 450000,
-      "quantity": 2
-    },
-    {
-      "id": "cart-ceramics",
-      "kind": "seat",
-      "name": "Workshop Keramik Akhir Tahun",
-      "category": "Kelas & workshop",
-      "subtitle": "20 Desember 2026 · Kemang, Jakarta",
-      "variant": "Tiket reguler",
-      "emoji": "◉",
-      "price": 250000,
-      "quantity": 1,
-      "can_checkout": false,
-      "blocked_reason": "Menunggu penawaran"
-    },
-    {
-      "id": "cart-plan",
-      "kind": "gathering_plan",
-      "name": "Rencana piknik keluarga",
-      "category": "Rencana gathering",
-      "subtitle": "Rencana Anda tersimpan di Kalender",
-      "emoji": "◷",
-      "price": 0,
-      "quantity": 1,
-      "can_checkout": false,
-      "blocked_reason": "Rencana gathering belum masuk tahap pembayaran"
-    }
-  ],
   "auth": {
     "isLoggedIn": true,
     "username": "Rini",
@@ -73,5 +54,63 @@
     "tagihanHref": "/kumpul-demo/tagihan",
     "chatHref": "/kumpul-demo/chat",
     "profileHref": "/kumpul-demo/profile"
+  },
+  "page": {
+    "contractVersion": 1,
+    "currency": "IDR",
+    "timezone": "Asia/Jakarta",
+    "type": "cart",
+    "items": [
+      {
+        "key": "k_cart_cart_family_camp",
+        "kind": "seat",
+        "name": "Family Camp Lembang",
+        "category": "Gathering keluarga",
+        "subtitle": "12 Desember 2026 · Lembang, Bandung",
+        "variant": "Tiket keluarga · 2 peserta",
+        "emoji": "⌂",
+        "unitPrice": 450000,
+        "quantity": 2,
+        "quantityEditable": true,
+        "maxQuantity": 10,
+        "checkoutable": true,
+        "detailHref": "/kumpul-demo/products/family-camp"
+      },
+      {
+        "key": "k_cart_cart_ceramics",
+        "kind": "seat",
+        "name": "Workshop Keramik Akhir Tahun",
+        "category": "Kelas & workshop",
+        "subtitle": "20 Desember 2026 · Kemang, Jakarta",
+        "variant": "Tiket reguler",
+        "emoji": "◉",
+        "unitPrice": 250000,
+        "quantity": 1,
+        "quantityEditable": true,
+        "maxQuantity": 10,
+        "checkoutable": false,
+        "blockedReason": "Menunggu penawaran",
+        "detailHref": "/kumpul-demo/products/ceramics"
+      },
+      {
+        "key": "k_cart_cart_plan",
+        "kind": "gathering_plan",
+        "name": "Rencana piknik keluarga",
+        "category": "Rencana gathering",
+        "subtitle": "Rencana Anda tersimpan di Kalender",
+        "emoji": "◷",
+        "unitPrice": 0,
+        "quantity": 1,
+        "quantityEditable": false,
+        "checkoutable": false,
+        "blockedReason": "Rencana gathering belum masuk tahap pembayaran",
+        "detailHref": "/kumpul-demo/products/plan"
+      }
+    ],
+    "actions": [
+      "cart.set_quantity",
+      "cart.remove",
+      "cart.checkout"
+    ]
   }
 }

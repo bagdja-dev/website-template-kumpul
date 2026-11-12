@@ -1,8 +1,10 @@
 {
   "isPreview": true,
-  "activePageSlug": "transaction-detail",
   "websiteSlug": "/kumpul-demo",
-  "profile": { "name": "Kumpul", "tagline": "Deep Teal • Family Trust" },
+  "profile": {
+    "name": "Kumpul",
+    "tagline": "Deep Teal • Family Trust"
+  },
   "templateTheme": {
     "colors": {
       "background": "#F0F7F8",
@@ -21,51 +23,67 @@
   "categories": [],
   "locations": [],
   "faqs": [],
-  "previewTransaction": {
-    "id": "trx-family-camp",
-    "ref_number": "INV-KMP-2026-018",
-    "status": "PENDING_PAYMENT",
-    "created_at": "2026-11-08T10:00:00+07:00",
-    "total_amount": 1350000,
-    "payment_mode": "ESCROW",
-    "escrow_id": "ESC-KMP-018",
-    "shipping_cost": 50000,
-    "recipient_name": "Rini Saputri",
-    "phone": "+62 812-3456-7890",
-    "address": "Jl. Melati No. 8",
-    "district": "Cidadap",
-    "city": "Bandung",
-    "postal_code": "40142",
-    "metadata": {
-      "shipping": {
-        "courier_code": "JNE",
-        "courier_service_name": "REG",
-        "destination_area_name": "Cidadap, Bandung"
-      }
-    },
-    "items": [
-      {
-        "id": "item-camp-seat",
-        "quantity": 2,
-        "unit_price": 500000,
-        "total_amount": 1000000,
-        "product_name": "Family Camp Lembang",
-        "emoji": "🏕"
-      },
-      {
-        "id": "item-camp-meal",
-        "quantity": 1,
-        "unit_price": 300000,
-        "total_amount": 300000,
-        "product_name": "Paket makan keluarga",
-        "emoji": "🍱"
-      }
-    ]
-  },
   "auth": {
     "isLoggedIn": true,
     "username": "Rini",
     "ordersHref": "/kumpul-demo/orders",
     "tagihanHref": "/kumpul-demo/tagihan"
+  },
+  "page": {
+    "contractVersion": 2,
+    "currency": "IDR",
+    "timezone": "Asia/Jakarta",
+    "type": "order_detail",
+    "transaction": {
+      "key": "k_trx_trx_family_camp",
+      "reference": "INV-KMP-2026-018",
+      "status": "PENDING_PAYMENT",
+      "statusLabel": "Menunggu pembayaran",
+      "statusMessage": "Selesaikan pembayaran sebelum batas waktu agar pesanan diproses.",
+      "createdAt": "2026-11-08T10:00:00+07:00",
+      "paymentMode": "ESCROW",
+      "paymentModeLabel": "Dana ditahan Bagdja sampai pesanan selesai",
+      "subtotalAmount": 1300000,
+      "shippingAmount": 50000,
+      "totalAmount": 1350000,
+      "items": [
+        {
+          "key": "k_item_item_camp_seat",
+          "name": "Family Camp Lembang",
+          "quantity": 2,
+          "unitPrice": 500000,
+          "totalAmount": 1000000,
+          "emoji": "🏕",
+          "unitPriceLabel": "Rp500.000",
+          "totalLabel": "Rp1.000.000"
+        },
+        {
+          "key": "k_item_item_camp_meal",
+          "name": "Paket makan keluarga",
+          "quantity": 1,
+          "unitPrice": 300000,
+          "totalAmount": 300000,
+          "emoji": "🍱",
+          "unitPriceLabel": "Rp300.000",
+          "totalLabel": "Rp300.000"
+        }
+      ],
+      "shipping": {
+        "recipient": "Rini Saputri",
+        "phone": "+62 812-3456-7890",
+        "address": "Jl. Melati No. 8, Cidadap, Bandung, 40142",
+        "areaLabel": "Cidadap, Bandung",
+        "courierLabel": "JNE REG"
+      },
+      "title": "Detail Transaksi",
+      "subtotalLabel": "Rp1.300.000",
+      "shippingLabel": "Rp50.000",
+      "totalLabel": "Rp1.350.000",
+      "courierLabel": "JNE REG"
+    },
+    "actions": [
+      "order.retry_payment",
+      "order.cancel"
+    ]
   }
 }
