@@ -16,5 +16,8 @@ await build({
   bundle: true,
   platform: 'browser',
   format: 'iife',
+  // Tiptap ikut di-bundle; batas client bundle runtime 512 KB (MAX_CLIENT_BUNDLE_BYTES).
+  minify: true,
+  legalComments: 'none',
 });
 console.log('Built dist/server.cjs and dist/client.js');

@@ -1,0 +1,133 @@
+{
+  "isPreview": true,
+  "websiteSlug": "/kumpul-demo",
+  "profile": {
+    "name": "Kumpul",
+    "tagline": "Deep Teal • Family Trust"
+  },
+  "templateTheme": {
+    "colors": {
+      "background": "#ffffff",
+      "surface": "#f4f4f5",
+      "text": "#18181b",
+      "textMuted": "#71717a",
+      "accent": "#00608e",
+      "accentHover": "#00547d",
+      "border": "#e4e4e7",
+      "success": "#0E9F6E"
+    }
+  },
+  "pages": [],
+  "sections": [],
+  "products": [],
+  "categories": [],
+  "locations": [],
+  "faqs": [],
+  "auth": {
+    "isLoggedIn": true,
+    "username": "Rini",
+    "ordersHref": "/kumpul-demo/orders",
+    "tagihanHref": "/kumpul-demo/tagihan"
+  },
+  "page": {
+    "contractVersion": 1,
+    "currency": "IDR",
+    "timezone": "Asia/Jakarta",
+    "type": "product_detail",
+    "product": {
+      "key": "k_product_study_tour",
+      "name": "Study Tour Bandung — Paket Sekolah",
+      "category": "Study tour",
+      "priceLabel": "Rp 350.000 / peserta",
+      "href": "/products/study-tour-bandung",
+      "images": [
+        "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 160 120'%3E%3Crect width='160' height='120' fill='%23006699'/%3E%3Ccircle cx='80' cy='60' r='30' fill='%23e6f4f6'/%3E%3C/svg%3E",
+        "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 160 120'%3E%3Crect width='160' height='120' fill='%230e7490'/%3E%3Ccircle cx='80' cy='60' r='30' fill='%23d9eff0'/%3E%3C/svg%3E"
+      ],
+      "description": "Perjalanan edukatif sehari ke Bandung untuk siswa.\n• Bus pariwisata\n• Pemandu lokal",
+      "descriptionHtml": "<p>Perjalanan edukatif sehari ke Bandung untuk siswa.</p><ul><li>Bus pariwisata</li><li>Pemandu lokal</li></ul>",
+      "detailHtml": "<h2>Itinerary</h2><p>07.00 berangkat, 10.00 museum, 13.00 kebun teh.</p>",
+      "gathering": {
+        "depositAmount": 100000,
+        "minAttendees": 20,
+        "maxAttendees": 45,
+        "eventDateLabel": "Sesuai jadwal sekolah",
+        "location": "Bandung",
+        "cancellationPolicy": "DP tidak dapat dikembalikan H-7.",
+        "optionGroups": [
+          {
+            "label": "Konsumsi",
+            "options": [
+              {
+                "key": "k_popt_box",
+                "label": "Paket Nasi Kotak & Snack Box",
+                "description": "Makan siang lengkap dan snack box.",
+                "descriptionHtml": "<p>Makan siang lengkap dan <strong>snack box</strong>.</p>",
+                "availabilityNote": "Tersedia selama acara berlangsung",
+                "benefits": [
+                  "Air mineral botol",
+                  "Snack box"
+                ],
+                "imageUrl": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 160 120'%3E%3Crect width='160' height='120' fill='%231f766e'/%3E%3Ccircle cx='80' cy='60' r='30' fill='%23d9e8d9'/%3E%3C/svg%3E",
+                "images": [
+                  "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 160 120'%3E%3Crect width='160' height='120' fill='%231f766e'/%3E%3Ccircle cx='80' cy='60' r='30' fill='%23d9e8d9'/%3E%3C/svg%3E",
+                  "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 160 120'%3E%3Crect width='160' height='120' fill='%23b45309'/%3E%3Ccircle cx='80' cy='60' r='30' fill='%23fde68a'/%3E%3C/svg%3E",
+                  "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 160 120'%3E%3Crect width='160' height='120' fill='%23be123c'/%3E%3Ccircle cx='80' cy='60' r='30' fill='%23fecdd3'/%3E%3C/svg%3E"
+                ]
+              },
+              {
+                "key": "k_popt_buffet",
+                "label": "Prasmanan Nusantara",
+                "description": "Prasmanan di rumah makan mitra.",
+                "benefits": [
+                  "Es teh manis"
+                ],
+                "images": []
+              }
+            ]
+          },
+          {
+            "label": "Lokasi",
+            "options": [
+              {
+                "key": "k_popt_museum",
+                "label": "Museum Geologi",
+                "venue": "Museum Geologi Bandung",
+                "address": "Jl. Diponegoro No. 57, Bandung",
+                "mapUrl": "https://maps.app.goo.gl/MuseumGeologi",
+                "benefits": [],
+                "imageUrl": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 160 120'%3E%3Crect width='160' height='120' fill='%237c5c2e'/%3E%3Ccircle cx='80' cy='60' r='30' fill='%23f3e8d3'/%3E%3C/svg%3E",
+                "images": [
+                  "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 160 120'%3E%3Crect width='160' height='120' fill='%237c5c2e'/%3E%3Ccircle cx='80' cy='60' r='30' fill='%23f3e8d3'/%3E%3C/svg%3E"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "specifications": [
+        {
+          "label": "Durasi",
+          "value": "1 hari"
+        },
+        {
+          "label": "Transportasi",
+          "value": "Bus pariwisata"
+        }
+      ]
+    },
+    "related": [
+      {
+        "name": "Outbound Lembang",
+        "href": "/products/outbound-lembang",
+        "imageUrl": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 160 120'%3E%3Crect width='160' height='120' fill='%23334155'/%3E%3Ccircle cx='80' cy='60' r='30' fill='%23e2e8f0'/%3E%3C/svg%3E",
+        "priceLabel": "Rp 275.000 / peserta"
+      }
+    ],
+    "loggedIn": false,
+    "actions": [
+      "gathering.plan.create",
+      "product.chat.open"
+    ]
+  }
+}

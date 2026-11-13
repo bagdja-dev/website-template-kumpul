@@ -10,9 +10,9 @@ website data.
 
 - **Brand:** Kumpul, with a deep-teal identity described as premium, trusted,
   and family-oriented.
-- **Palette:** primary `#006699`, hover `#00557A`, light surface `#E6F4F6`,
-  border `#B3D4DD`, success `#0E9F6E`. Supporting neutrals include navy
-  `#0F172A` and slate `#64748B`.
+- **Palette:** background `#FFFFFF`, primary `#00608E`, hover `#00547D`,
+  surface `#F4F4F5`, border `#E4E4E7`, text `#18181B`, muted text `#71717A`,
+  success `#0E9F6E`.
 - **Header:** two rows; the prototype calls out a 56px top row for right-aligned
   utility icons and a 52px lower row for centered page navigation. The brand
   mark and Kumpul identity sit at the left.

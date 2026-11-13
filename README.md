@@ -15,11 +15,15 @@ direction and notes about the prototype's sample data and host-managed pages.
 ## Contract
 
 - Package: `@bagdja/kumpul`
-- Version: `1.1.0`
+- Version: `1.3.10`
 - Template slug: `kumpul`
 - `manifestVersion`: `1`, `rendererApiVersion`: `1`
+- Default palette: `manifest.theme` (`mode: light`, background `#ffffff`,
+  accent `#00608e`, text `#18181b`) is stored as the template structure theme,
+  so Studio reset returns to these colors.
 - Entry point: `dist/server.cjs` (wajib) dan `dist/client.js` (JavaScript browser), dinyatakan di `manifest.entry`
 - Halaman contoh untuk website baru: `manifest.defaultPages` (Beranda, Katalog Gathering, Cara Kerja, Tentang)
+- Data contoh website baru: `manifest.sampleData` (kategori, gathering, FAQ, dan tagline), dipakai untuk seed website serta preview package
 - Halaman sistem milik template (`manifest.pageOverrides`): header, keranjang, transaksi, detail transaksi, tagihan, invoice, kalender, rencana gathering
 
 ## Halaman sistem (`props.page`)
@@ -89,7 +93,9 @@ only against fixture data; action buttons are intentionally disabled. The
 gathering invoices and payment terms, summary counts, and local status filters.
 Its payment and detail actions are disabled in preview. The `transaksi` fixture
 shows grouped transaction cards with local status filters; detail, chat, and
-payment actions are disabled in preview. The `keranjang` fixture demonstrates
+payment actions are disabled in preview. On live orders pages, **Chat Order**
+creates or reuses a website chat thread scoped to the selected transaction and
+opens that conversation. The `keranjang` fixture demonstrates
 selection, quantity changes, local removal, and a checkout summary; checkout is
 disabled and these interactions do not persist or call APIs. These account-page
 fixtures use local sample props and make no network requests. A
@@ -114,7 +120,11 @@ remain read-only, and the fixture does not invent food or catering features.
 Preview shows one workflow stepper; the simulation is ephemeral and makes no
 requests or real changes. Outside preview, the page reads only `order` and
 `gatheringPlan` data provided by the host's `order_detail` section and omits the
-simulator.
+simulator. During live invitation confirmation, organizers can open the
+reservation manager to filter registrations, review accepted/rejected counts,
+and reject an eligible reservation individually. The manager adapts to a
+large desktop dialog or a mobile bottom sheet; closing reservations remains
+next to the cancel action on desktop and in the mobile actions sheet.
 
 Use this repository as a starting sample: create a new designer repository
 from it, then replace the renderer and fixtures while preserving the package

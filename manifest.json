@@ -2,7 +2,7 @@
   "manifestVersion": 1,
   "slug": "kumpul",
   "name": "Kumpul",
-  "version": "1.1.0",
+  "version": "1.3.40",
   "rendererApiVersion": 1,
   "businessProfiles": [
     "gathering"
@@ -31,17 +31,33 @@
   ],
   "pageOverrides": [
     "header",
+    "bottom_nav",
     "cart",
     "orders",
     "order_detail",
     "tagihan",
     "invoice_detail",
     "calendar",
-    "gathering_plan"
+    "gathering_plan",
+    "product_detail",
+    "gathering_invitation"
   ],
   "entry": {
     "server": "dist/server.cjs",
     "client": "dist/client.js"
+  },
+  "theme": {
+    "mode": "light",
+    "preset": "light",
+    "colors": {
+      "background": "#ffffff",
+      "surface": "#f4f4f5",
+      "text": "#18181b",
+      "textMuted": "#71717a",
+      "accent": "#00608e",
+      "accentHover": "#00547d",
+      "border": "#e4e4e7"
+    }
   },
   "defaultPages": [
     {
@@ -273,32 +289,32 @@
             "layout": "grid",
             "images": [
               {
-                "url": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 260'%3E%3Crect width='400' height='260' fill='%23006699'/%3E%3Ccircle cx='200' cy='130' r='64' fill='%23e6f4f6'/%3C/svg%3E",
+                "url": "https://cdn.bagdja.com/bagdja-dev/bagdja-website/dc1a3024-23cd-464b-8dd4-65b3b6f58016-Gemini_Generated_Image_5guojz5guojz5guo.jpeg",
                 "alt": "Ilustrasi camping keluarga",
                 "caption": "Camping bersama keluarga"
               },
               {
-                "url": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 260'%3E%3Crect width='400' height='260' fill='%230e7490'/%3E%3Ccircle cx='200' cy='130' r='64' fill='%23d9eff0'/%3C/svg%3E",
+                "url": "https://cdn.bagdja.com/bagdja-dev/bagdja-website/65b7ab42-70f2-4a39-89f7-012e9ef5103e-Gemini_Generated_Image_4ipoem4ipoem4ipo.jpeg",
                 "alt": "Ilustrasi workshop komunitas",
                 "caption": "Workshop komunitas"
               },
               {
-                "url": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 260'%3E%3Crect width='400' height='260' fill='%231f766e'/%3E%3Ccircle cx='200' cy='130' r='64' fill='%23d9e8d9'/%3C/svg%3E",
+                "url": "https://cdn.bagdja.com/bagdja-dev/bagdja-website/b971e1f7-56dc-46cb-aa4e-f33b18f5745b-Gemini_Generated_Image_l1epdsl1epdsl1ep.jpeg",
                 "alt": "Ilustrasi olahraga luar ruang",
                 "caption": "Olahraga di alam terbuka"
               },
               {
-                "url": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 260'%3E%3Crect width='400' height='260' fill='%235b6b8a'/%3E%3Ccircle cx='200' cy='130' r='64' fill='%23e1e8ed'/%3C/svg%3E",
+                "url": "https://cdn.bagdja.com/bagdja-dev/bagdja-website/2f88543d-f921-4273-993f-893b4d1a7d1c-Gemini_Generated_Image_dztpogdztpogdztp.jpeg",
                 "alt": "Ilustrasi komunitas berdiskusi",
                 "caption": "Berbagi cerita dan ide"
               },
               {
-                "url": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 260'%3E%3Crect width='400' height='260' fill='%237a6547'/%3E%3Ccircle cx='200' cy='130' r='64' fill='%23eee7db'/%3C/svg%3E",
+                "url": "https://cdn.bagdja.com/bagdja-dev/bagdja-website/508bf51b-3424-4d45-8981-0e8d91af6677-Gemini_Generated_Image_ft9dy5ft9dy5ft9d.jpeg",
                 "alt": "Ilustrasi belajar bersama",
                 "caption": "Belajar hal baru bersama"
               },
               {
-                "url": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 260'%3E%3Crect width='400' height='260' fill='%233a6b55'/%3E%3Ccircle cx='200' cy='130' r='64' fill='%23d9e8d9'/%3E%3C/svg%3E",
+                "url": "https://cdn.bagdja.com/bagdja-dev/bagdja-website/6d3cf66d-d2f5-48a9-8f79-39ac26f85a17-Gemini_Generated_Image_asb3dpasb3dpasb3.jpeg",
                 "alt": "Ilustrasi kegiatan luar ruang",
                 "caption": "Menikmati waktu di luar ruang"
               }
@@ -307,5 +323,226 @@
         }
       ]
     }
-  ]
+  ],
+  "sampleData": {
+    "tagline": "Kumpul bareng jadi lebih mudah.",
+    "categories": [
+      {
+        "label": "Study Tour"
+      },
+      {
+        "label": "Bukber"
+      }
+    ],
+    "products": [
+      {
+        "name": "School Excursion & Edu-Trip: Belajar Sambil Rekreasi",
+        "type": "gathering",
+        "price": 250000,
+        "category": "Study Tour",
+        "description": "<p>Ajak 1 angkatan seru-seruan bareng lewat program team building yang asyik dan edukatif!<br />Fasilitas: Venue privat asri, games master profesional, perlengkapan games, makan siang + coffee break, dan dokumentasi lengkap.<br />Harga: Mulai Rp[Masukkan Harga]/pax.<br />Info &amp; reservasi hubungi admin ya! 📲</p>",
+        "detail": "<p>Ingin memberikan pengalaman belajar yang berbeda di luar kelas? Paket <em>Study Tour &amp; Gathering</em> kami memadukan unsur edukasi dan hiburan yang interaktif, aman, dan edukatif bagi para siswa dari berbagai jenjang pendidikan.</p><p><strong>Fasilitas Termasuk:</strong></p><ul><li><p>Transportasi bus pariwisata AC yang nyaman (penjemputan dari sekolah)</p></li><li><p>Tiket masuk destinasi wisata/edukasi resmi &amp; <em>tour guide</em> lokal</p></li><li><p>Konsumsi (Makan siang &amp; <em>snack box</em>)</p></li><li><p>Atribut kegiatan (ID Card / Kaos <em>gathering</em> opsional)</p></li><li><p>Spanduk kegiatan &amp; suvenir/sertifikat (opsional)</p></li><li><p>Tim medis &amp; pendamping profesional selama perjalanan</p></li></ul><p><strong>Harga Spesial:</strong> Mulai dari Rp[Masukkan Harga] / pax (Paket All-In)</p>",
+        "images": [
+          "https://cdn.bagdja.com/bagdja-dev/bagdja-website/2f6302c2-0551-4ab8-9ca3-6e3ff6ce48ae-pangalengan.jpeg"
+        ],
+        "minAttendees": 15,
+        "maxAttendees": 60,
+        "depositPerSeat": 25000,
+        "cancellationPolicy": {
+          "penaltyType": "NONE",
+          "penaltyValue": 0,
+          "cutoffDaysBeforeEvent": 0,
+          "prepareDaysBeforeEvent": 0,
+          "participantTerms": "<ul><li><p><strong>Pendaftaran &amp; Pembayaran</strong></p><ul><li><p>Peserta wajib melakukan pendaftaran melalui tautan resmi yang disediakan.</p></li><li><p>Pembayaran uang muka (<em>Down Payment</em> / DP) atau pelunasan wajib dilakukan sesuai dengan batas waktu yang telah ditentukan agar pendaftaran tercatat valid.</p></li></ul></li><li><p><strong>Kehadiran &amp; Registrasi</strong></p><ul><li><p>Peserta wajib hadir di titik kumpul atau sekolah <strong>30 menit sebelum</strong> jadwal keberangkatan/acara dimulai.</p></li><li><p>Peserta wajib menunjukkan bukti pendaftaran (seperti tiket/QR code atau kartu identitas) kepada panitia saat melakukan <em>check-in</em> registrasi ulang.</p></li></ul></li><li><p><strong>Perlengkapan Pribadi</strong></p><ul><li><p>Peserta disarankan membawa obat-obatan pribadi yang diperlukan.</p></li><li><p>Mengenakan pakaian yang sopan, nyaman, serta sesuai dengan dresscode atau kegiatan lapangan (seperti pakaian <em>outdoor</em> / kasual rapi).</p></li><li><p>Membawa perlengkapan ibadah, jas hujan ringan/payung, serta air minum pribadi secukupnya.</p></li></ul></li><li><p><strong>Tata Tertib &amp; Keselamatan</strong></p><ul><li><p>Peserta wajib menjaga ketertiban, kebersihan lingkungan destinasi wisata, serta mengikuti seluruh instruksi dari <em>tour guide</em> dan panitia penyelenggara demi keamanan bersama.</p></li><li><p>Dilarang membawa barang-barang terlarang (seperti senjata tajam, minuman keras, atau zat adiktif lainnya) selama kegiatan berlangsung.</p></li></ul></li></ul>"
+        },
+        "options": [
+          {
+            "group": "lokasi",
+            "key": "lembang-park-zoo",
+            "label": "Lembang Park Zoo",
+            "description": "<p>Nikmati pengalaman study tour dan rekreasi edukatif yang menyenangkan di Lembang Park &amp; Zoo. Para siswa dapat belajar mengenal berbagai satwa secara langsung, menikmati suasana kebun binatang modern yang asri, serta mempererat kebersamaan lewat kegiatan luar ruangan di udara pegunungan yang sejuk.</p>",
+            "venue": "Lembang Park Zoo",
+            "address": "Jl. Kolonel Masturi No.171, Sukajaya, Kec. Lembang, Kabupaten Bandung Barat, Jawa Barat 40391",
+            "mapUrl": "https://www.google.com/maps/place//data=!4m2!3m1!19sChIJc0Pt2KrhaC4R5v7HbJL8cxs",
+            "benefits": [
+              "Tiket masuk destinasi wisata",
+              "Pemandu wisata lokal berpengalaman",
+              "Area khusus rombongan sekolah"
+            ],
+            "images": [
+              "https://cdn.bagdja.com/bagdja-dev/bagdja-website/8ba15732-6bb3-4c90-8c75-8bc51c22751b-lembang_park_zoo.webp",
+              "https://cdn.bagdja.com/bagdja-dev/bagdja-website/52d78b11-29f4-4155-b0ad-4c0faeb15660-lpark_zoo_maps.jpeg",
+              "https://cdn.bagdja.com/bagdja-dev/bagdja-website/a9910c46-4275-4d3d-bc16-d519dfe41021-parkzoo_animal.jpg"
+            ]
+          },
+          {
+            "group": "lokasi",
+            "key": "hutan-pinus-pangalengan",
+            "label": "Hutan Pinus Pangalengan",
+            "description": "<p>Nikmati pengalaman study tour dan petualangan alam yang seru di Hutan Pinus Rahong. Para siswa akan diajak menikmati keindahan asri barisan pohon pinus, menyegarkan pikiran di udara pegunungan yang sejuk, serta mengikuti berbagai aktivitas luar ruangan edukatif seperti team building, hiking, atau fun rafting.</p>",
+            "venue": "Hutan Pinus Rahong",
+            "address": "Pulosari, Kec. Pangalengan, Kabupaten Bandung, Jawa Barat 40378",
+            "mapUrl": "https://www.google.com/maps/place//data=!4m2!3m1!19sChIJzdIdqWGRaC4Rez9P15dQ-9c",
+            "benefits": [
+              "Tiket masuk kawasan wisata alam",
+              "Pemandu kegiatan lokal berpengalaman",
+              "Area khusus rombongan sekolah & gathering"
+            ],
+            "images": [
+              "https://cdn.bagdja.com/bagdja-dev/bagdja-website/558c3e0d-2e85-48a0-a76f-d8456c7d0eb2-rahong_river.webp",
+              "https://cdn.bagdja.com/bagdja-dev/bagdja-website/ab396c52-0fc1-4063-87b3-fa889de8cc31-penginapan.jpeg",
+              "https://cdn.bagdja.com/bagdja-dev/bagdja-website/e36a3f5e-d6cb-4aa2-9dcc-90a8d3561a5b-hutan.jpg"
+            ]
+          },
+          {
+            "group": "lokasi",
+            "key": "puspa-iptek-sundial",
+            "label": "Puspa Iptek Sundial",
+            "description": "<p>Nikmati pengalaman study tour yang edukatif dan interaktif di Puspa Iptek Sundial. Para siswa dapat menjelajahi berbagai alat peraga sains dan teknologi yang seru, belajar mengenai ilmu pengetahuan secara langsung, serta mengenal keunikan bangunan museum yang berbentuk jam matahari raksasa.</p>",
+            "venue": "Puspa Iptek Sundial",
+            "address": "Jl. Parahyangan Raya Jl. Raya Padalarang No.427, Kertajaya, Kec. Padalarang, Kabupaten Bandung Barat, Jawa Barat 40553",
+            "mapUrl": "https://www.google.com/maps/place//data=!4m2!3m1!19sChIJlZLEFlHjaC4RZsa4_KMpPiI",
+            "benefits": [
+              "Tiket masuk pusat sains & peraga edukatif",
+              "Pemandu museum lokal berpengalaman",
+              "Area khusus rombongan sekolah"
+            ],
+            "images": [
+              "https://cdn.bagdja.com/bagdja-dev/bagdja-website/7b19889d-fec6-4855-9a68-7fb51a48cc8b-Screenshot_2026-11-12_at_20.23.19.png",
+              "https://cdn.bagdja.com/bagdja-dev/bagdja-website/8f93d2de-433c-46d0-baf9-8bb81c2c7e63-Screenshot_2026-11-12_at_20.22.22.png",
+              "https://cdn.bagdja.com/bagdja-dev/bagdja-website/dfa95702-472a-4ccd-87f3-6e03177ee1ef-Screenshot_2026-11-12_at_20.21.21.png",
+              "https://cdn.bagdja.com/bagdja-dev/bagdja-website/b4053464-a4ff-4140-a5c1-15a182cff27a-Screenshot_2026-11-12_at_20.21.11.png",
+              "https://cdn.bagdja.com/bagdja-dev/bagdja-website/073126d5-c18e-4cdb-82ba-1a2d77880084-Screenshot_2026-11-12_at_20.20.49.png"
+            ]
+          },
+          {
+            "group": "konsumsi",
+            "key": "paket-nasi-kotak-snack-box",
+            "label": "Paket Nasi Kotak & Snack Box",
+            "description": "<p>Menu makan siang lengkap bercitarasa nusantara yang higienis dan mengenyangkan, disajikan bersama snack box (kudapan dan air mineral) untuk menemani perjalanan study tour para siswa.</p>",
+            "benefits": [
+              "Nasi putih dengan lauk utama (ayam/daging pilihan) & sayur",
+              "Air mineral botol",
+              "Snack box (aneka kue tradisional/roti)"
+            ],
+            "images": [
+              "https://cdn.bagdja.com/bagdja-dev/bagdja-website/f5b6f033-22d6-4271-8eef-02b8e8dba439-nasibox.jpeg"
+            ],
+            "availabilityNote": "Tersedia selama acara berlangsung"
+          },
+          {
+            "group": "konsumsi",
+            "key": "paket-prasmanan-nusantara-minuman-segar",
+            "label": "Paket Prasmanan Nusantara & Minuman Segar",
+            "description": "<p>Menu makan prasmanan dengan aneka pilihan hidangan lezat khas nusantara yang disajikan secara hangat dan lezat, cocok untuk dinikmati bersama rombongan besar.</p>",
+            "benefits": [
+              "Menu prasmanan lengkap (nasi, lauk pauk, sayur, dan buah segar)",
+              "Minuman segar (teh manis / air mineral)",
+              "Pelayanan pramusaji selama jam makan"
+            ],
+            "images": [
+              "https://cdn.bagdja.com/bagdja-dev/bagdja-website/769fb5cb-0712-4598-89bf-da3d9d4da156-Prasmanan-2-Large.jpeg"
+            ],
+            "availabilityNote": "Tersedia selama acara"
+          }
+        ]
+      },
+      {
+        "name": "Bukber Limbangan",
+        "type": "gathering",
+        "price": 50000,
+        "category": "Bukber",
+        "description": "<p>Nikmati momen kebersamaan buka puasa bersama di Limbangan dengan suasana hangat, menu pilihan lezat, dan tempat yang nyaman untuk silaturahmi bersama keluarga, teman, atau alumni.</p>",
+        "detail": "<h3><strong>Paket Bukber Limbangan: Hangatnya Silaturahmi di Bulan Suci</strong></h3><p>Sambut bulan suci Ramadan dengan mempererat tali silaturahmi bersama keluarga, sahabat, maupun rekan alumni di Limbangan. Kami menghadirkan paket buka puasa bersama dengan suasana yang nyaman, asri, dan penuh kehangatan.</p><p><strong>Fasilitas &amp; Layanan</strong></p><ul><li><p><strong>Pilihan Menu Spesial:</strong> Nikmati hidangan khas nusantara mulai dari takjil segar, makanan utama yang menggugah selera, hingga hidangan penutup yang manis.</p></li><li><p><strong>Ruangan Nyaman:</strong> Tersedia pilihan area indoor maupun outdoor yang luas dan bersih, cocok untuk acara kumpul skala kecil hingga besar.</p></li><li><p><strong>Fasilitas Pendukung:</strong> Mushola yang nyaman, area parkir yang luas, serta koneksi Wi-Fi.</p></li></ul>",
+        "images": [
+          "https://cdn.bagdja.com/bagdja-dev/bagdja-website/5a8fbf4e-5320-42b7-8e56-36c52137f021-bukber_1.jpeg",
+          "https://cdn.bagdja.com/bagdja-dev/bagdja-website/0537c105-54e2-4550-98d2-514ac2a2db22-bukber_4.jpg",
+          "https://cdn.bagdja.com/bagdja-dev/bagdja-website/336aaaac-4c3a-404f-90eb-396445fca86b-bukber_2.jpg"
+        ],
+        "minAttendees": 4,
+        "maxAttendees": 20,
+        "depositPerSeat": 10000,
+        "cancellationPolicy": {
+          "penaltyType": "PERCENTAGE",
+          "penaltyValue": 25,
+          "cutoffDaysBeforeEvent": 2,
+          "prepareDaysBeforeEvent": 3,
+          "summary": "<h3><strong>1. Keterangan Aturan Pembatalan</strong></h3><blockquote><p>Jika acara dibatalkan oleh penyelenggara karena kendala tak terduga, dana yang sudah dibayarkan (termasuk DP) akan dikembalikan sepenuhnya kepada peserta. Pembatalan oleh peserta selambat-lambatnya dilakukan sesuai batas waktu yang ditentukan untuk pengembalian dana penuh.</p></blockquote><ul><li><p><strong>Persiapan dimulai:</strong> <code>3</code> (hari sebelum acara)</p></li><li><p><strong>Batas akhir pembatalan:</strong> <code>2</code> (hari sebelum acara)</p></li><li><p><strong>Penalti per peserta:</strong> <code> 25%</code></p></li></ul><h3><strong>2. Syarat dan Ketentuan Peserta </strong></h3><blockquote><ol><li><p>Peserta wajib melakukan pendaftaran dan konfirmasi pembayaran DP/lunas sesuai tenggat waktu yang ditentukan.</p></li><li><p>Harap hadir tepat waktu sesuai jadwal sesi buka puasa bersama yang telah dipilih di lokasi acara.</p></li><li><p>Menjaga ketertiban, kebersihan area venue, dan kenyamanan bersama selama acara berlangsung.</p></li></ol></blockquote>",
+          "participantTerms": "<ol><li><p><strong>Kehadiran &amp; Pendaftaran:</strong> Peserta wajib melakukan pendaftaran ulang dan konfirmasi kehadiran/pembayaran selambat-lambatnya sesuai tenggat waktu yang ditentukan.</p></li><li><p><strong>Waktu Kedatangan:</strong> Peserta diharapkan hadir tepat waktu di lokasi acara sesuai dengan jadwal sesi buka puasa bersama yang telah dipilih.</p></li><li><p><strong>Selama Acara Berlangsung:</strong> Peserta wajib menjaga ketertiban, kebersihan area venue, serta kenyamanan bersama selama rangkaian acara (mulai dari pembukaan, berbuka puasa, hingga ramah tamah).</p></li><li><p><strong>Kepulangan &amp; Batas Waktu:</strong> Acara akan diakhiri sesuai jadwal rundown. Peserta diharapkan memeriksa kembali barang bawaan pribadi sebelum meninggalkan lokasi venue.</p></li><li><p><strong>Konfirmasi &amp; Pembatalan:</strong> Segala bentuk perubahan jumlah peserta atau pembatalan wajib diinformasikan kepada panitia selambat-lambatnya H-2 sebelum acara.</p><p></p></li></ol>"
+        },
+        "options": [
+          {
+            "group": "paket",
+            "key": "paket-liwet-asep-stroberi-asstro",
+            "label": "Paket Liwet Asep Stroberi (Asstro)",
+            "description": "<p><strong>Detail Paket Nasi Liwet Asep Stroberi</strong></p><p><strong>1. Menu yang Didapat (Isi Paket)</strong></p><ul><li><p><strong>Nasi Liwet Khas Sunda:</strong> Nasi liwet gurih beraroma rempah khas yang dimasak dengan bumbu pilihan, teri, dan petai/rempah pendukung.</p></li><li><p><strong>Lauk Utama (Pilihan):</strong></p><ul><li><p>Ayam (Pejantan / Kampung) Goreng atau Bakar</p></li><li><p>Gepuk Daging Sapi</p></li><li><p>Ikan Gurame / Ikan Nila (Goreng atau Bakar)</p></li></ul></li><li><p><strong>Pendamping &amp; Gorengan:</strong></p><ul><li><p>Tahu goreng hangat</p></li><li><p>Tempe mendoan</p></li></ul></li><li><p><strong>Pelengkap Sayur &amp; Sambal:</strong></p><ul><li><p>Tumis peda selera (atau tumisan khas)</p></li><li><p>Sambal dadak khas Asep Stroberi yang pedas segar</p></li><li><p>Lalapan segar (tomat, timun, kol, kemangi, terong, dan selada)</p></li></ul></li></ul><p><strong>2. Bentuk Penyajian</strong></p><ul><li><p><strong>Penyajian Kelompok/Keluarga (Paket 2–5 Orang):</strong> Nasi liwet biasanya disajikan di dalam <strong>panci kecil atau kastrol tradisional</strong>, sehingga nasi tetap hangat dan bisa diambil sesuai porsi bersama. Lauk utama, tahu, tempe mendoan, lalapan, dan sambal ditata di atas piring atau cobek tanah liat secara terpisah di meja makan ala Sunda.</p></li><li><p><strong>Penyajian Perorangan (Timbel Liwet):</strong> Disajikan dalam wadah piring beralaskan daun pisang dengan bentuk nasi liwet yang dicetak rapi, lengkap berdampingan langsung dengan lauk pauk, ikan asin, sambal, serta lalapan dalam satu porsi individual.</p></li><li><p><strong>Suasana Makan:</strong> Sangat mendukung untuk acara kebersamaan atau buka puasa bersama (bukber) karena menghadirkan nuansa saung bambu khas Sunda yang asri.</p></li></ul>",
+            "venue": "Asep Stroberi Nagreg",
+            "address": "Jl. Raya Nagreg KM. 36, Nagreg, Kab. Bandung",
+            "mapUrl": "https://www.google.com/maps/place//data=!4m2!3m1!19sChIJO0qo1C7JaC4RjNftmiS9XMc",
+            "benefits": [
+              "Termasuk takjil dan es teh manis",
+              "Nuansa saung bambu khas Sunda",
+              "Area parkir luas dan mushola"
+            ],
+            "images": [
+              "https://cdn.bagdja.com/bagdja-dev/bagdja-website/fcffcfbb-75b1-4be2-88a4-d8a4c101a55a-paket_liwet_astro.jpg",
+              "https://cdn.bagdja.com/bagdja-dev/bagdja-website/3371b18a-1e06-4080-972b-aa752dfcdb0e-liwet_astro.jpeg"
+            ],
+            "availabilityNote": "Tersedia selama acara berlangsung"
+          },
+          {
+            "group": "paket",
+            "key": "bedeng-hills-coffee-eatery",
+            "label": "Bedeng Hills Coffee & Eatery",
+            "description": "<p>Nikmati pengalaman buka puasa bersama di kafe <em>outdoor</em> dengan pemandangan bukit dan <em>sunset</em> yang indah di Limbangan. Suasana luas, asri, dan sangat cocok untuk acara kumpul reuni atau komunitas.</p><p><strong>Menu yang Didapat:</strong></p><ul><li><p>Makanan utama pilihan (Rice Bowl / Chicken Katsu)</p></li><li><p>Takjil spesial Ramadan &amp; Es Teh Manis</p></li><li><p>Snack sharing (French fries / platter)</p></li></ul>",
+            "venue": "Bedeng Hills Coffee & Eatery",
+            "address": "Pasir Astana, RT.001/RW.010, Pasirwaru, Kec. Balubur Limbangan, Kabupaten Garut",
+            "mapUrl": "https://maps.app.goo.gl/4AZz8xtrBNw6oVKi8",
+            "benefits": [
+              "Pemandangan bukit & sunset yang indah",
+              "Area luas, ramah keluarga & tersedia playground",
+              "Suasana outdoor yang sejuk"
+            ],
+            "images": [
+              "https://cdn.bagdja.com/bagdja-dev/bagdja-website/38378d55-e57f-44bc-af88-c89de0063b3c-bedeng_2.jpeg",
+              "https://cdn.bagdja.com/bagdja-dev/bagdja-website/9a7b09b2-e9bd-4aed-bfb9-0860399b9ef5-bedeng.jpeg"
+            ]
+          },
+          {
+            "group": "paket",
+            "key": "house-of-maru",
+            "label": "House of Maru",
+            "description": "<p>Tempat nongkrong kekinian favorit anak muda di area Limbangan dengan interior yang estetik dan cozy untuk acara buka puasa bersama.</p><p><strong>Menu yang Didapat:</strong></p><ul><li><p>Menu utama (Pasta atau Rice Bowl khas kafe)</p></li><li><p>Takjil &amp; Minuman segar / Mocktail khas Maru</p></li><li><p>Pilihan camilan penutup</p></li></ul>",
+            "venue": "House of Maru",
+            "address": "Jl. Raya Leuwigoong - Limbangan Barat No.888, Majasari, Kec. Cibiuk (jalur perbatasan Limbangan), Kabupaten Garut",
+            "mapUrl": "https://maps.app.goo.gl/raBK4EWbwxYrtHPZ9",
+            "benefits": [
+              "Interior aesthetic & Instagramable",
+              "Suasana cozy dengan fasilitas musik",
+              "Lokasi strategis di jalur Limbangan Barat"
+            ],
+            "images": [
+              "https://cdn.bagdja.com/bagdja-dev/bagdja-website/8e647055-16a8-4529-968d-c57895e9ca11-hm3.jpeg",
+              "https://cdn.bagdja.com/bagdja-dev/bagdja-website/7cef15f4-ac3f-4879-a8f6-c6cc8ecf9390-hm.jpeg",
+              "https://cdn.bagdja.com/bagdja-dev/bagdja-website/ae616086-d355-4e58-8e9b-e0e7afb8b03a-hm.jpg"
+            ]
+          }
+        ]
+      }
+    ],
+    "faqs": [
+      {
+        "question": "Bagaimana cara ikut sebuah gathering?",
+        "answer": "Pilih gathering di katalog lalu buat rencana atau terima undangan dari penyelenggara. RSVP dan pembayaran dilakukan di website ini."
+      },
+      {
+        "question": "Kapan saya membayar?",
+        "answer": "Setelah penyelenggara menutup RSVP, tagihan peserta terbit. Batas pembayaran tertera di halaman Tagihan."
+      },
+      {
+        "question": "Bagaimana jika acara dibatalkan?",
+        "answer": "Dana yang sudah dibayar dikembalikan sesuai kebijakan pembatalan gathering tersebut."
+      }
+    ]
+  }
 }

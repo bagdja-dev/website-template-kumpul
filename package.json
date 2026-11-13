@@ -1,6 +1,6 @@
 {
   "name": "@bagdja/kumpul",
-  "version": "1.1.0",
+  "version": "1.3.40",
   "description": "Kumpul website template for Bagdja",
   "license": "UNLICENSED",
   "type": "commonjs",
@@ -29,6 +29,18 @@
     "node": ">=18"
   },
   "devDependencies": {
+    "@tiptap/core": "3.27.3",
+    "@tiptap/extension-bold": "3.27.3",
+    "@tiptap/extension-document": "3.27.3",
+    "@tiptap/extension-hard-break": "3.27.3",
+    "@tiptap/extension-italic": "3.27.3",
+    "@tiptap/extension-link": "3.27.3",
+    "@tiptap/extension-list": "3.27.3",
+    "@tiptap/extension-paragraph": "3.27.3",
+    "@tiptap/extension-text": "3.27.3",
+    "@tiptap/extension-underline": "3.27.3",
+    "@tiptap/extensions": "3.27.3",
+    "@tiptap/pm": "3.27.3",
     "esbuild": "^0.25.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"

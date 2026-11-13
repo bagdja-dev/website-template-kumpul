@@ -1,3 +1,14 @@
+import { Editor } from '@tiptap/core';
+import Bold from '@tiptap/extension-bold';
+import Document from '@tiptap/extension-document';
+import HardBreak from '@tiptap/extension-hard-break';
+import Italic from '@tiptap/extension-italic';
+import Link from '@tiptap/extension-link';
+import { BulletList, ListItem, OrderedList } from '@tiptap/extension-list';
+import Paragraph from '@tiptap/extension-paragraph';
+import Text from '@tiptap/extension-text';
+import Underline from '@tiptap/extension-underline';
+import { Placeholder, UndoRedo } from '@tiptap/extensions';
 import QRCode from 'qrcode';
 
 (() => {
@@ -13,6 +24,637 @@ import QRCode from 'qrcode';
       window.addEventListener('resize', updateHeaderHeight);
     }
   }
+
+  document.querySelectorAll('input[data-bagdja-field="invitation.banner"]').forEach((input) => {
+    const field = input.closest('.kumpul-invite-banner-field');
+    const preview = field?.querySelector('[data-invitation-banner-preview]');
+    const empty = field?.querySelector('[data-invitation-banner-empty]');
+    const error = field?.querySelector('[data-invitation-banner-error]');
+    const removeBanner = field?.querySelector('input[data-bagdja-field="invitation.removeBanner"]');
+    if (!(preview instanceof HTMLImageElement) || !(empty instanceof HTMLElement)) return;
+    const savedSrc = preview.getAttribute('src');
+    let objectUrl = '';
+
+    input.addEventListener('change', () => {
+      const file = input.files && input.files[0];
+      if (error) {
+        error.hidden = true;
+        error.textContent = '';
+      }
+      if (file && (!['image/jpeg', 'image/png', 'image/webp', 'image/gif'].includes(file.type) || file.size > 5 * 1024 * 1024)) {
+        if (error) {
+          error.textContent = file.size > 5 * 1024 * 1024
+            ? 'Ukuran banner maksimal 5 MB.'
+            : 'Pilih gambar JPG, PNG, WebP, atau GIF.';
+          error.hidden = false;
+        }
+        input.value = '';
+      }
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+      objectUrl = file && input.files?.[0] ? URL.createObjectURL(file) : '';
+      const src = objectUrl || savedSrc;
+      if (src) preview.src = src;
+      else preview.removeAttribute('src');
+      preview.hidden = !src;
+      empty.hidden = Boolean(src);
+      if (objectUrl && removeBanner instanceof HTMLInputElement) removeBanner.checked = false;
+    });
+  });
+
+  // Rencana gathering live: tahap yang sudah dilewati bisa dibuka (ringkasan baca saja).
+  document.querySelectorAll('[data-plan-live]').forEach((workflow) => {
+    const tabs = Array.from(workflow.querySelectorAll('[data-plan-step-tab]'));
+    const panels = Array.from(workflow.querySelectorAll('[data-plan-step-panel]'));
+    tabs.forEach((tab) => {
+      tab.addEventListener('click', () => {
+        if (tab.disabled) return;
+        const step = tab.dataset.planStepTab;
+        tabs.forEach((item) => item.setAttribute('aria-pressed', String(item === tab)));
+        panels.forEach((panel) => { panel.hidden = panel.dataset.planStepPanel !== step; });
+      });
+    });
+  });
+
+  // Tombol "Tolak" yang menunggu konfirmasi popup alasan (dipakai handler klik global di bawah).
+  let pendingRejectButton = null;
+
+  const updateRejectReason = (rejectDialog) => {
+    if (!rejectDialog) return;
+    const reasonOptions = Array.from(rejectDialog.querySelectorAll('[data-kumpul-reservation-reason-option]'));
+    const customReason = rejectDialog.querySelector('[data-kumpul-reservation-custom-reason]');
+    const rejectConfirm = rejectDialog.querySelector('[data-kumpul-reservation-confirm-submit]');
+    const selected = reasonOptions.find((option) => option.checked);
+    const isCustomReason = selected?.value === 'custom';
+    if (customReason) {
+      customReason.hidden = !isCustomReason;
+      customReason.required = Boolean(isCustomReason);
+    }
+    if (rejectConfirm) {
+      rejectConfirm.disabled = !selected || (isCustomReason && !customReason?.value.trim());
+    }
+  };
+
+  document.querySelectorAll('[data-kumpul-reservation-confirm-dialog]').forEach((rejectDialog) => {
+    rejectDialog.querySelectorAll('[data-kumpul-reservation-reason-option]').forEach((option) => {
+      option.addEventListener('change', () => updateRejectReason(rejectDialog));
+    });
+    rejectDialog.querySelector('[data-kumpul-reservation-custom-reason]')
+      ?.addEventListener('input', () => updateRejectReason(rejectDialog));
+    rejectDialog.addEventListener('close', () => { pendingRejectButton = null; });
+  });
+
+  document.querySelectorAll('[data-kumpul-reservation-dialog]').forEach((dialog) => {
+    const filters = Array.from(dialog.querySelectorAll('[data-kumpul-reservation-filter]'));
+    const items = Array.from(dialog.querySelectorAll('[data-kumpul-reservation-item]'));
+    const filterEmpty = dialog.querySelector('[data-kumpul-reservation-filter-empty]');
+
+    filters.forEach((filter) => {
+      filter.addEventListener('click', () => {
+        const status = filter.dataset.kumpulReservationFilter;
+        const matches = items.filter((item) => item.dataset.kumpulReservationGroup === status);
+        filters.forEach((item) => item.setAttribute('aria-pressed', String(item === filter)));
+        items.forEach((item) => {
+          item.hidden = !matches.includes(item);
+        });
+        if (filterEmpty) filterEmpty.hidden = matches.length > 0;
+      });
+    });
+  });
+
+  // Editor ringan teks undangan (Tiptap): menulis HTML ke textarea `invitation.description`
+  // yang dikirim bootstrap Bagdja; API menyanitasi profil `basic` (p, br, strong, em, u, s, ul, ol, li, a).
+  document.querySelectorAll('[data-kumpul-rich-editor]').forEach((field) => {
+    const source = field.querySelector('[data-rich-source]');
+    const box = field.querySelector('[data-rich-box]');
+    const mount = field.querySelector('[data-rich-content]');
+    if (!(source instanceof HTMLTextAreaElement) || !box || !mount || source.disabled) return;
+    let editor;
+    try {
+      editor = new Editor({
+        element: mount,
+        content: source.value,
+        // Hanya ekstensi yang sesuai profil sanitasi `basic` (menjaga ukuran bundle client).
+        extensions: [
+          Document, Paragraph, Text, HardBreak, Bold, Italic, Underline,
+          BulletList, OrderedList, ListItem, UndoRedo,
+          Link.configure({ openOnClick: false, autolink: true, defaultProtocol: 'https' }),
+          Placeholder.configure({ placeholder: source.getAttribute('placeholder') || '' }),
+        ],
+        editorProps: { attributes: { 'aria-label': 'Teks undangan', role: 'textbox', 'aria-multiline': 'true' } },
+        onUpdate: ({ editor: current }) => {
+          source.value = current.isEmpty ? '' : current.getHTML();
+        },
+      });
+    } catch {
+      return; // Tetap memakai textarea biasa.
+    }
+    box.hidden = false;
+    field.classList.add('is-ready');
+    const buttons = Array.from(field.querySelectorAll('[data-rich-cmd]'));
+    const syncToolbar = () => {
+      buttons.forEach((button) => {
+        const command = button.getAttribute('data-rich-cmd');
+        const active = ['bold', 'italic', 'underline', 'bulletList', 'orderedList', 'link'].includes(command) && editor.isActive(command);
+        button.setAttribute('aria-pressed', String(active));
+      });
+    };
+    editor.on('selectionUpdate', syncToolbar);
+    editor.on('transaction', syncToolbar);
+    buttons.forEach((button) => {
+      button.addEventListener('mousedown', (event) => event.preventDefault());
+      button.addEventListener('click', () => {
+        const chain = editor.chain().focus();
+        switch (button.getAttribute('data-rich-cmd')) {
+          case 'bold': chain.toggleBold().run(); break;
+          case 'italic': chain.toggleItalic().run(); break;
+          case 'underline': chain.toggleUnderline().run(); break;
+          case 'bulletList': chain.toggleBulletList().run(); break;
+          case 'orderedList': chain.toggleOrderedList().run(); break;
+          case 'clear': chain.clearNodes().unsetAllMarks().run(); break;
+          case 'link': {
+            const previous = editor.getAttributes('link').href || 'https://';
+            const url = window.prompt('Alamat tautan (https://…)', previous);
+            if (url === null) break;
+            if (!url.trim()) { chain.extendMarkRange('link').unsetLink().run(); break; }
+            if (!/^https?:\/\//i.test(url.trim())) break;
+            chain.extendMarkRange('link').setLink({ href: url.trim() }).run();
+            break;
+          }
+          default: break;
+        }
+      });
+    });
+    syncToolbar();
+  });
+
+  // Pemilih tanggal & jam untuk HP (bottom sheet) — menulis ke input datetime-local asli
+  // (`data-bagdja-field`), sehingga intent ke host tidak berubah. Web tetap memakai input bawaan.
+  const pad2 = (value) => String(value).padStart(2, '0');
+  const formatDateTimeLabel = (value) => {
+    const match = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/.exec(value || '');
+    if (!match) return '';
+    const date = new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
+    const day = new Intl.DateTimeFormat('id-ID', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }).format(date);
+    return `${day} · ${match[4]}.${match[5]} WIB`;
+  };
+  const syncDateTimeTrigger = (trigger) => {
+    const input = trigger.closest('.kumpul-datetime')?.querySelector('[data-kumpul-datetime-input]');
+    const textNode = trigger.querySelector('[data-kumpul-datetime-text]');
+    if (!(input instanceof HTMLInputElement) || !textNode) return;
+    const label = formatDateTimeLabel(input.value);
+    textNode.textContent = label || 'Pilih tanggal & jam';
+    trigger.toggleAttribute('data-empty', !label);
+  };
+  document.querySelectorAll('[data-kumpul-datetime-trigger]').forEach(syncDateTimeTrigger);
+
+  let dateTimeSheet = null;
+  const openDateTimeSheet = (trigger) => {
+    const input = trigger.closest('.kumpul-datetime')?.querySelector('[data-kumpul-datetime-input]');
+    if (!(input instanceof HTMLInputElement) || input.disabled) return;
+    if (!dateTimeSheet) {
+      dateTimeSheet = document.createElement('dialog');
+      dateTimeSheet.className = 'kumpul-dt-sheet';
+      // Di dalam .kumpul-template agar variabel tema (--kt-*) & gaya dasar berlaku.
+      (document.querySelector('.kumpul-template') || document.body).append(dateTimeSheet);
+    }
+    const sheet = dateTimeSheet;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const match = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/.exec(input.value || '');
+    const fallback = new Date(today.getTime() + 86400000);
+    const state = match
+      ? { year: +match[1], month: +match[2] - 1, day: +match[3], hour: +match[4], minute: +match[5] }
+      : { year: fallback.getFullYear(), month: fallback.getMonth(), day: null, hour: 9, minute: 0 };
+    const view = { year: state.year, month: state.month };
+    const minutes = [0, 15, 30, 45].includes(state.minute) ? [0, 15, 30, 45] : [0, 15, 30, 45, state.minute].sort((a, b) => a - b);
+    const label = trigger.getAttribute('data-label') || 'Tanggal';
+
+    const render = () => {
+      const first = new Date(view.year, view.month, 1);
+      const offset = (first.getDay() + 6) % 7; // Senin = kolom pertama
+      const daysInMonth = new Date(view.year, view.month + 1, 0).getDate();
+      const atCurrentMonth = view.year === today.getFullYear() && view.month === today.getMonth();
+      const monthLabel = new Intl.DateTimeFormat('id-ID', { month: 'long', year: 'numeric' }).format(first);
+      const cells = [];
+      for (let i = 0; i < offset; i += 1) cells.push('<span></span>');
+      for (let day = 1; day <= daysInMonth; day += 1) {
+        const date = new Date(view.year, view.month, day);
+        const selected = state.day === day && state.month === view.month && state.year === view.year;
+        cells.push(`<button type="button" data-dt-day="${day}"${date < today ? ' disabled' : ''}${date.getTime() === today.getTime() ? ' data-today' : ''} aria-pressed="${selected}">${day}</button>`);
+      }
+      const summary = state.day
+        ? formatDateTimeLabel(`${state.year}-${pad2(state.month + 1)}-${pad2(state.day)}T${pad2(state.hour)}:${pad2(state.minute)}`)
+        : 'Pilih tanggal dulu';
+      sheet.innerHTML = `<div class="kumpul-dt-head"><div><strong></strong><span>Waktu Indonesia Barat</span></div><button type="button" class="kumpul-dt-close" data-dt-cancel aria-label="Tutup">×</button></div>`
+        + `<div class="kumpul-dt-body">`
+        + `<div><div class="kumpul-dt-month"><button type="button" data-dt-month="-1" aria-label="Bulan sebelumnya"${atCurrentMonth ? ' disabled' : ''}>‹</button><strong>${monthLabel}</strong><button type="button" data-dt-month="1" aria-label="Bulan berikutnya">›</button></div>`
+        + `<div class="kumpul-dt-grid">${['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'].map((name) => `<span>${name}</span>`).join('')}${cells.join('')}</div></div>`
+        + `<div><div class="kumpul-dt-label">Jam</div><div class="kumpul-dt-hours">${Array.from({ length: 24 }, (_, hour) => `<button type="button" data-dt-hour="${hour}" aria-pressed="${state.hour === hour}">${pad2(hour)}</button>`).join('')}</div></div>`
+        + `<div><div class="kumpul-dt-label">Menit</div><div class="kumpul-dt-minutes">${minutes.map((minute) => `<button type="button" data-dt-minute="${minute}" aria-pressed="${state.minute === minute}">${pad2(minute)}</button>`).join('')}</div></div>`
+        + `<div class="kumpul-dt-summary">${summary}</div>`
+        + `</div><div class="kumpul-dt-foot"><button type="button" data-dt-clear>Kosongkan</button><button type="button" class="kumpul-dt-save" data-dt-save${state.day ? '' : ' disabled'}>Simpan</button></div>`;
+      sheet.querySelector('.kumpul-dt-head strong').textContent = label;
+      sheet.querySelector('[data-dt-hour][aria-pressed="true"]')?.scrollIntoView({ inline: 'center', block: 'nearest' });
+    };
+
+    const commit = (value) => {
+      input.value = value;
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+      input.dispatchEvent(new Event('change', { bubbles: true }));
+      syncDateTimeTrigger(trigger);
+      sheet.close();
+    };
+
+    sheet.onclick = (event) => {
+      const target = event.target instanceof Element ? event.target : null;
+      if (!target) return;
+      if (target === sheet || target.closest('[data-dt-cancel]')) { sheet.close(); return; }
+      const month = target.closest('[data-dt-month]');
+      if (month) {
+        const next = new Date(view.year, view.month + Number(month.getAttribute('data-dt-month')), 1);
+        view.year = next.getFullYear();
+        view.month = next.getMonth();
+        render();
+        return;
+      }
+      const day = target.closest('[data-dt-day]');
+      if (day && !day.disabled) {
+        state.year = view.year;
+        state.month = view.month;
+        state.day = Number(day.getAttribute('data-dt-day'));
+        render();
+        return;
+      }
+      const hour = target.closest('[data-dt-hour]');
+      if (hour) { state.hour = Number(hour.getAttribute('data-dt-hour')); render(); return; }
+      const minute = target.closest('[data-dt-minute]');
+      if (minute) { state.minute = Number(minute.getAttribute('data-dt-minute')); render(); return; }
+      if (target.closest('[data-dt-clear]')) { commit(''); return; }
+      if (target.closest('[data-dt-save]') && state.day) {
+        commit(`${state.year}-${pad2(state.month + 1)}-${pad2(state.day)}T${pad2(state.hour)}:${pad2(state.minute)}`);
+      }
+    };
+    render();
+    if (!sheet.open) sheet.showModal();
+  };
+  document.addEventListener('click', (event) => {
+    const trigger = event.target instanceof Element ? event.target.closest('[data-kumpul-datetime-trigger]') : null;
+    if (!trigger) return;
+    event.preventDefault();
+    openDateTimeSheet(trigger);
+  });
+
+  // Carousel gambar di popup opsi: panah menggeser satu slide, titik mengikuti posisi geser.
+  document.querySelectorAll('[data-option-carousel]').forEach((carousel) => {
+    const track = carousel.querySelector('[data-option-carousel-track]');
+    const dots = Array.from(carousel.querySelectorAll('[data-option-carousel-dot]'));
+    if (!track) return;
+    const current = () => Math.round(track.scrollLeft / Math.max(1, track.clientWidth));
+    const go = (index) => track.scrollTo({ left: index * track.clientWidth, behavior: 'smooth' });
+    carousel.querySelector('[data-option-carousel-prev]')?.addEventListener('click', () => go(Math.max(0, current() - 1)));
+    carousel.querySelector('[data-option-carousel-next]')?.addEventListener('click', () => go(Math.min(dots.length - 1, current() + 1)));
+    track.addEventListener('scroll', () => {
+      const active = current();
+      dots.forEach((dot, index) => dot.toggleAttribute('data-active', index === active));
+    }, { passive: true });
+  });
+
+  // Image viewer fullscreen: <dialog> modal sendiri agar tampil di atas popup opsi (top layer).
+  let imageViewer = null;
+  const openImageViewer = (urls, startIndex) => {
+    if (!urls.length) return;
+    if (!imageViewer) {
+      imageViewer = document.createElement('dialog');
+      imageViewer.className = 'kumpul-image-viewer';
+      imageViewer.setAttribute('aria-label', 'Pratinjau gambar');
+      imageViewer.innerHTML = '<div class="kumpul-image-viewer-stage" data-viewer-stage><img alt="" data-viewer-image></div>'
+        + '<button type="button" class="kumpul-image-viewer-close" data-viewer-close aria-label="Tutup pratinjau">×</button>'
+        + '<button type="button" class="kumpul-image-viewer-nav is-prev" data-viewer-prev aria-label="Gambar sebelumnya">‹</button>'
+        + '<button type="button" class="kumpul-image-viewer-nav is-next" data-viewer-next aria-label="Gambar berikutnya">›</button>'
+        + '<span class="kumpul-image-viewer-count" data-viewer-count></span>';
+      (document.querySelector('.kumpul-template') || document.body).append(imageViewer);
+      const state = { urls: [], index: 0, touchX: null };
+      imageViewer.kumpulState = state;
+      const show = (index) => {
+        state.index = (index + state.urls.length) % state.urls.length;
+        imageViewer.querySelector('[data-viewer-image]').src = state.urls[state.index];
+        imageViewer.querySelector('[data-viewer-count]').textContent = `${state.index + 1} / ${state.urls.length}`;
+        const many = state.urls.length > 1;
+        imageViewer.querySelector('[data-viewer-prev]').hidden = !many;
+        imageViewer.querySelector('[data-viewer-next]').hidden = !many;
+        imageViewer.querySelector('[data-viewer-count]').hidden = !many;
+      };
+      imageViewer.kumpulShow = show;
+      imageViewer.addEventListener('click', (event) => {
+        const target = event.target instanceof Element ? event.target : null;
+        if (target?.closest('[data-viewer-close]')) imageViewer.close();
+        else if (target?.closest('[data-viewer-prev]')) show(state.index - 1);
+        else if (target?.closest('[data-viewer-next]')) show(state.index + 1);
+        // Area kosong di sekitar gambar = latar → tutup.
+        else if (target?.matches('[data-viewer-stage], dialog')) imageViewer.close();
+      });
+      imageViewer.addEventListener('keydown', (event) => {
+        if (event.key === 'ArrowLeft') show(state.index - 1);
+        if (event.key === 'ArrowRight') show(state.index + 1);
+      });
+      imageViewer.addEventListener('touchstart', (event) => { state.touchX = event.touches[0].clientX; }, { passive: true });
+      imageViewer.addEventListener('touchend', (event) => {
+        if (state.touchX === null) return;
+        const delta = event.changedTouches[0].clientX - state.touchX;
+        state.touchX = null;
+        if (Math.abs(delta) > 40 && state.urls.length > 1) show(state.index + (delta < 0 ? 1 : -1));
+      });
+    }
+    imageViewer.kumpulState.urls = urls;
+    imageViewer.kumpulShow(startIndex);
+    if (!imageViewer.open) imageViewer.showModal();
+  };
+
+  document.addEventListener('click', (event) => {
+    const target = event.target instanceof Element ? event.target : null;
+    const slide = target?.closest('[data-option-image-open]');
+    if (!slide) return;
+    const carousel = slide.closest('[data-option-carousel]');
+    const urls = Array.from(carousel?.querySelectorAll('[data-option-image-open] img') || [])
+      .map((image) => image.getAttribute('src'))
+      .filter(Boolean);
+    openImageViewer(urls, Number(slide.getAttribute('data-option-image-open')) || 0);
+  });
+
+  // Loading pada tombol yang terlihat bila intent dijalankan lewat tombol tersembunyi
+  // (popup konfirmasi kirim undangan, tolak reservasi): cerminkan aria-busy dari bootstrap Bagdja.
+  const busyProxies = (element) => {
+    if (element.matches('[data-kumpul-submit-invitation-intent]')) {
+      return Array.from((element.closest('[data-bagdja-scope]') || document).querySelectorAll('[data-kumpul-invitation-confirm-open]'));
+    }
+    if (element.matches('[data-kumpul-reservation-reject-submit]')) {
+      return Array.from(element.closest('[data-kumpul-reservation-item]')?.querySelectorAll('[data-kumpul-reservation-reject-open]') || []);
+    }
+    return [];
+  };
+  if (typeof MutationObserver === 'function') {
+    new MutationObserver((records) => {
+      records.forEach((record) => {
+        const element = record.target;
+        if (!(element instanceof Element)) return;
+        const busy = element.getAttribute('aria-busy') === 'true';
+        busyProxies(element).forEach((proxy) => {
+          if (busy) proxy.setAttribute('aria-busy', 'true');
+          else proxy.removeAttribute('aria-busy');
+        });
+      });
+    }).observe(document.body, { subtree: true, attributes: true, attributeFilter: ['aria-busy'] });
+  }
+
+  // Modal Konfirmasi acara: ringkas opsi final yang tercentang (per kategori) di scope tahap.
+  const fillFinalSummary = (sheet, opener) => {
+    const summary = sheet.querySelector('[data-kumpul-final-summary]');
+    if (!summary) return;
+    const scope = opener.closest('[data-bagdja-scope]') || document;
+    const groups = Array.from(scope.querySelectorAll('[data-plan-final-options] .kumpul-invite-vote-group'));
+    if (!groups.length) return;
+    summary.replaceChildren(...groups.map((group) => {
+      const item = document.createElement('li');
+      const category = group.querySelector('h4')?.textContent?.trim() || 'Pilihan';
+      const checked = group.querySelector('input[type="radio"]:checked');
+      const name = checked?.closest('label')?.querySelector('.kumpul-plan-option-name')?.textContent?.trim();
+      item.textContent = `${category}: ${name || 'belum dipilih'}`;
+      if (!name) item.setAttribute('data-missing', '');
+      return item;
+    }));
+  };
+
+  // Sheet halaman undangan (kode OTP, tambah peserta): HP = bottom sheet, web = modal.
+  const inviteSheet = (name) => document.querySelector(`[data-kumpul-invite-sheet="${name}"]`);
+  document.addEventListener('click', (event) => {
+    const target = event.target instanceof Element ? event.target : null;
+    const opener = target?.closest('[data-kumpul-sheet-open]');
+    if (opener) {
+      const sheet = inviteSheet(opener.getAttribute('data-kumpul-sheet-open'));
+      if (sheet instanceof HTMLDialogElement) fillFinalSummary(sheet, opener);
+      if (sheet instanceof HTMLDialogElement && !sheet.open) {
+        sheet.showModal();
+        sheet.querySelector('input[data-bagdja-field="otp.code"]')?.focus();
+      }
+      return;
+    }
+    if (target?.closest('[data-kumpul-sheet-close]')) {
+      target.closest('dialog')?.close();
+      return;
+    }
+    // Tutup hanya bila tap di luar kotak dialog (backdrop), bukan di padding dalam dialog.
+    if (target?.matches('[data-kumpul-invite-sheet]')) {
+      const box = target.getBoundingClientRect();
+      if (event.clientX < box.left || event.clientX > box.right || event.clientY < box.top || event.clientY > box.bottom) target.close();
+    }
+  });
+  // Setelah reservasi dikirim (status menunggu OTP), sheet kode langsung terbuka di HP.
+  const autoSheet = document.querySelector('[data-kumpul-invite-sheet][data-auto-open-mobile]');
+  if (autoSheet instanceof HTMLDialogElement && window.matchMedia('(max-width: 760px)').matches) {
+    autoSheet.showModal();
+  }
+
+  // Popup detail pilihan rencana (kartu kategori opsi).
+  document.addEventListener('click', (event) => {
+    const target = event.target instanceof Element ? event.target : null;
+    const openOption = target?.closest('[data-plan-option-open]');
+    if (openOption) {
+      // Tombol ⓘ di dalam <label> pemilih opsi: jangan ikut mencentang/melepas.
+      event.preventDefault();
+      const dialog = document.getElementById(openOption.getAttribute('data-plan-option-open') || '');
+      if (dialog instanceof HTMLDialogElement && !dialog.open) dialog.showModal();
+      return;
+    }
+    if (target?.closest('[data-plan-option-close]')) {
+      target.closest('dialog')?.close();
+      return;
+    }
+    if (target?.matches('[data-plan-option-dialog]')) target.close();
+  });
+
+  document.addEventListener('click', (event) => {
+    const target = event.target instanceof Element ? event.target : null;
+    const rejectOpen = target?.closest('[data-kumpul-reservation-reject-open]');
+    if (rejectOpen) {
+      const scope = rejectOpen.closest('[data-plan-live]');
+      const rejectDialog = scope?.querySelector('[data-kumpul-reservation-confirm-dialog]');
+      const item = rejectOpen.closest('[data-kumpul-reservation-item]');
+      if (!(rejectDialog instanceof HTMLDialogElement) || !item) return;
+      pendingRejectButton = item.querySelector('[data-kumpul-reservation-reject-submit]');
+      const name = item.querySelector('.kumpul-plan-sim-person-heading strong')?.textContent?.trim() || 'peserta';
+      const confirmName = rejectDialog.querySelector('[data-kumpul-reservation-confirm-name]');
+      if (confirmName) confirmName.textContent = name;
+      rejectDialog.querySelectorAll('[data-kumpul-reservation-reason-option]').forEach((option) => {
+        option.checked = false;
+      });
+      const customReason = rejectDialog.querySelector('[data-kumpul-reservation-custom-reason]');
+      if (customReason instanceof HTMLTextAreaElement) customReason.value = '';
+      updateRejectReason(rejectDialog);
+      if (!rejectDialog.open) rejectDialog.showModal();
+      return;
+    }
+
+    const rejectCancel = target?.closest('[data-kumpul-reservation-confirm-cancel]');
+    if (rejectCancel) {
+      rejectCancel.closest('dialog')?.close();
+      pendingRejectButton = null;
+      return;
+    }
+
+    const rejectSubmit = target?.closest('[data-kumpul-reservation-confirm-submit]');
+    if (rejectSubmit) {
+      if (!(pendingRejectButton instanceof HTMLButtonElement)) return;
+      const rejectDialog = rejectSubmit.closest('[data-kumpul-reservation-confirm-dialog]');
+      const selected = rejectDialog?.querySelector('[data-kumpul-reservation-reason-option]:checked');
+      const customReason = rejectDialog?.querySelector('[data-kumpul-reservation-custom-reason]');
+      const reason = selected?.value === 'custom'
+        ? customReason?.value.trim()
+        : selected?.value;
+      if (!reason) return;
+      const row = pendingRejectButton.closest('[data-kumpul-reservation-item]');
+      const message = row?.querySelector('[data-kumpul-reservation-message]');
+      const checkbox = row?.querySelector('[data-bagdja-selectable]');
+      if (!(message instanceof HTMLInputElement) || !(checkbox instanceof HTMLInputElement)) return;
+      message.value = reason;
+      checkbox.checked = true;
+      // Klik dulu sebelum close(): event 'close' mengosongkan pendingRejectButton.
+      pendingRejectButton.click();
+      rejectDialog.close();
+      pendingRejectButton = null;
+      return;
+    }
+
+    const open = target?.closest('[data-kumpul-reservation-open]');
+    if (open) {
+      // aria-controls menunjuk dialognya (reservasi / pembayaran); fallback dialog pertama di scope.
+      const controlled = open.getAttribute('aria-controls');
+      const scope = open.closest('[data-bagdja-scope]') || document;
+      const dialog = (controlled && document.getElementById(controlled)) || scope.querySelector('[data-kumpul-reservation-dialog]');
+      if (dialog instanceof HTMLDialogElement && !dialog.open) dialog.showModal();
+      return;
+    }
+
+    const close = target?.closest('[data-kumpul-reservation-close]');
+    if (close) {
+      close.closest('dialog')?.close();
+      return;
+    }
+
+    if (target?.matches('[data-kumpul-reservation-dialog]')) target.close();
+  });
+
+  document.addEventListener('click', (event) => {
+    const trigger = event.target instanceof Element
+      ? event.target.closest('[data-kumpul-invitation-confirm-open]')
+      : null;
+    if (!trigger) return;
+    const scope = trigger.closest('[data-bagdja-scope]') || document;
+    const dialog = scope.querySelector('[data-kumpul-invitation-confirm-dialog]');
+    if (!(dialog instanceof HTMLDialogElement)) return;
+    event.preventDefault();
+    if (!dialog.open) dialog.showModal();
+  });
+
+  document.addEventListener('click', (event) => {
+    const target = event.target instanceof Element ? event.target : null;
+    const cancel = target?.closest('[data-kumpul-invitation-confirm-cancel]');
+    if (cancel) {
+      cancel.closest('dialog')?.close();
+      return;
+    }
+
+    const confirm = target?.closest('[data-kumpul-invitation-confirm-submit]');
+    if (!confirm) return;
+    const dialog = confirm.closest('dialog');
+    const scope = dialog?.closest('[data-bagdja-scope]') || document;
+    const submit = scope.querySelector('[data-kumpul-submit-invitation-intent]');
+    if (!(submit instanceof HTMLButtonElement) || submit.disabled) return;
+    dialog.close();
+    submit.click();
+  });
+
+  // Simulator preview: banner undangan hanya dipratinjau lokal (tidak diunggah).
+  document.querySelectorAll('[data-sim-appearance]').forEach((appearance) => {
+    const input = appearance.querySelector('[data-sim-banner]');
+    const preview = appearance.querySelector('[data-sim-banner-preview]');
+    const empty = appearance.querySelector('[data-sim-banner-empty]');
+    const description = appearance.querySelector('[data-sim-invitation-description]');
+    const error = appearance.querySelector('[data-sim-banner-error]');
+    const saved = appearance.querySelector('[data-sim-invitation-saved]');
+    const saveButton = appearance.querySelector('[data-sim-save-invitation]');
+    let objectUrl = '';
+    input?.addEventListener('change', () => {
+      const file = input.files && input.files[0];
+      if (error) {
+        error.hidden = true;
+        error.textContent = '';
+      }
+      if (saved) saved.hidden = true;
+      if (file && (!['image/jpeg', 'image/png', 'image/webp', 'image/gif'].includes(file.type) || file.size > 5 * 1024 * 1024)) {
+        if (error) {
+          error.textContent = file.size > 5 * 1024 * 1024
+            ? 'Ukuran banner maksimal 5 MB.'
+            : 'Pilih gambar JPG, PNG, WebP, atau GIF.';
+          error.hidden = false;
+        }
+        input.value = '';
+        if (objectUrl) URL.revokeObjectURL(objectUrl);
+        objectUrl = '';
+        if (preview) {
+          preview.hidden = true;
+          preview.removeAttribute('src');
+        }
+        if (empty) empty.hidden = false;
+        return;
+      }
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+      objectUrl = file ? URL.createObjectURL(file) : '';
+      if (preview) {
+        preview.hidden = !objectUrl;
+        if (objectUrl) preview.src = objectUrl;
+        else preview.removeAttribute('src');
+      }
+      if (empty) empty.hidden = Boolean(objectUrl);
+    });
+    description?.addEventListener('input', () => {
+      if (saved) saved.hidden = true;
+    });
+    saveButton?.addEventListener('click', () => {
+      if (error) error.hidden = true;
+      if (saved) {
+        saved.textContent = 'Tampilan undangan tersimpan di preview ini saja.';
+        saved.hidden = false;
+      }
+    });
+  });
+
+  // Bottom sheet HP (checkbox + label): tutup dengan Escape dan kunci scroll halaman saat terbuka.
+  const sheetToggles = Array.from(document.querySelectorAll('.kumpul-sheet-toggle'));
+  const syncSheetLock = () => {
+    document.documentElement.classList.toggle('kumpul-sheet-open', sheetToggles.some((toggle) => toggle.checked));
+  };
+  sheetToggles.forEach((toggle) => toggle.addEventListener('change', () => {
+    if (toggle.checked) sheetToggles.forEach((other) => { if (other !== toggle) other.checked = false; });
+    syncSheetLock();
+  }));
+  // Label pembuka sheet/popup (role="button") bisa dipicu keyboard.
+  document.addEventListener('keydown', (event) => {
+    const label = event.target instanceof Element ? event.target.closest('label[role="button"][for]') : null;
+    if (!label || (event.key !== 'Enter' && event.key !== ' ')) return;
+    event.preventDefault();
+    label.click();
+  });
+  // Popup batal: fokus ke kolom alasan saat dibuka.
+  sheetToggles.filter((toggle) => toggle.classList.contains('kumpul-modal-toggle')).forEach((toggle) => {
+    toggle.addEventListener('change', () => {
+      if (toggle.checked) toggle.parentElement?.querySelector('.kumpul-modal input[data-bagdja-field]')?.focus();
+    });
+  });
+  document.addEventListener('keydown', (event) => {
+    if (event.key !== 'Escape' || !sheetToggles.some((toggle) => toggle.checked)) return;
+    sheetToggles.forEach((toggle) => { toggle.checked = false; });
+    syncSheetLock();
+  });
 
   document.querySelectorAll('[data-calendar-page]').forEach((calendar) => {
     const tabs = Array.from(calendar.querySelectorAll('[data-calendar-tab]'));
@@ -408,29 +1050,14 @@ import QRCode from 'qrcode';
       const emptyOptions = page?.querySelector('[data-plan-opened-options-empty]');
       const options = activeOptions();
       if (optionList) {
-        optionList.replaceChildren(...options.map((option) => {
-          const item = document.createElement('li');
-          const heading = document.createElement('div');
-          heading.className = 'kumpul-plan-option-heading';
-          const copy = document.createElement('div');
-          const group = document.createElement('span');
-          group.className = 'kumpul-plan-option-group';
-          group.textContent = option.group;
-          const label = document.createElement('h3');
-          label.textContent = option.label;
-          copy.append(group, label);
-          heading.append(copy);
-          if (option.isFinal) {
-            const badge = document.createElement('span');
-            badge.className = 'kumpul-plan-final-option';
-            badge.textContent = 'Opsi final';
-            heading.append(badge);
-          }
-          const description = document.createElement('p');
-          description.textContent = [option.location, option.description].filter(Boolean).join(' · ') || 'Detail pilihan belum ditambahkan.';
-          item.append(heading, description);
-          return item;
-        }));
+        // Semua opsi sudah dirender server per kategori; cukup tampilkan yang aktif.
+        const activeIds = new Set(options.map((option) => option.id));
+        optionList.querySelectorAll('[data-plan-option-id]').forEach((row) => {
+          row.hidden = !activeIds.has(row.dataset.planOptionId);
+        });
+        optionList.querySelectorAll('[data-plan-option-group]').forEach((card) => {
+          card.hidden = !card.querySelector('[data-plan-option-id]:not([hidden])');
+        });
         optionList.hidden = options.length === 0;
       }
       if (emptyOptions) emptyOptions.hidden = options.length > 0;
@@ -838,4 +1465,40 @@ import QRCode from 'qrcode';
     });
     updateResults();
   });
+
+  // Muat ulang (data-bagdja-refresh): host mengganti dokumen iframe bila data berubah. window.name
+  // bertahan antar-dokumen di iframe yang sama, jadi dialog reservasi & tab filternya dipulihkan.
+  const RESTORE_PREFIX = 'kumpul-restore:';
+  document.addEventListener('click', (event) => {
+    const button = event.target instanceof Element ? event.target.closest('[data-bagdja-refresh]') : null;
+    if (!button || button.disabled) return;
+    const dialog = document.querySelector('[data-kumpul-reservation-dialog][open]');
+    const filter = dialog?.querySelector('[data-kumpul-reservation-filter][aria-pressed="true"]');
+    try {
+      window.name = `${RESTORE_PREFIX}${JSON.stringify({
+        dialog: dialog?.id || '',
+        filter: filter?.getAttribute('data-kumpul-reservation-filter') || '',
+      })}`;
+    } catch {
+      // window.name tidak tersedia → cukup refresh tanpa memulihkan dialog.
+    }
+  }, true);
+  try {
+    if (typeof window.name === 'string' && window.name.startsWith(RESTORE_PREFIX)) {
+      const restore = JSON.parse(window.name.slice(RESTORE_PREFIX.length));
+      window.name = '';
+      const dialog = typeof restore?.dialog === 'string' && /^kumpul-[a-z-]{1,40}$/.test(restore.dialog)
+        ? document.getElementById(restore.dialog)
+        : null;
+      if (dialog instanceof HTMLDialogElement && dialog.matches('[data-kumpul-reservation-dialog]')) {
+        const filter = typeof restore.filter === 'string' && /^[A-Z_]{1,40}$/.test(restore.filter)
+          ? dialog.querySelector(`[data-kumpul-reservation-filter="${restore.filter}"]`)
+          : null;
+        if (filter instanceof HTMLElement) filter.click();
+        if (!dialog.open) dialog.showModal();
+      }
+    }
+  } catch {
+    window.name = '';
+  }
 })();

@@ -17,6 +17,8 @@ const PAGE_SLUGS = {
   invoice_detail: 'invoice-detail',
   calendar: 'calendar',
   gathering_plan: 'plan-detail',
+  product_detail: 'product-detail',
+  gathering_invitation: 'invitation',
 };
 
 function list(value) {
@@ -176,6 +178,16 @@ function adaptPlan(page) {
     workflow_step: plan.workflowStep,
     workflow_step_label: plan.workflowStepLabel,
     invite_policy: plan.invitePolicy,
+    invitation_banner_url: typeof plan.invitationBannerUrl === 'string' && /^https:\/\//.test(plan.invitationBannerUrl)
+      ? plan.invitationBannerUrl
+      : undefined,
+    invitation_description: plan.invitationDescription,
+    invitation_description_html: typeof plan.invitationDescriptionHtml === 'string' ? plan.invitationDescriptionHtml : undefined,
+    can_cancel: plan.canCancel === true,
+    public_invitation_href: plan.publicInvitationHref,
+    public_invitation_url: typeof plan.publicInvitationUrl === 'string' && /^https?:\/\/[^\s<>"']+$/.test(plan.publicInvitationUrl)
+      ? plan.publicInvitationUrl
+      : undefined,
     occurrence: {
       status: occurrence.status,
       status_label: occurrence.statusLabel,
@@ -188,13 +200,20 @@ function adaptPlan(page) {
       payment_deadline: occurrence.paymentDueAt,
       final_schedule: occurrence.scheduledAt,
       final_location: occurrence.location,
+      final_location_address: occurrence.locationAddress,
+      final_location_map_url: occurrence.locationMapUrl,
       option_groups_snapshot: options.map((option) => ({
         product_option_id: option.key,
         option_group_key: option.group,
         option_key: option.key,
         label: option.label,
         description: option.description,
+        description_html: typeof option.descriptionHtml === 'string' ? option.descriptionHtml : undefined,
         venue_location: option.venue,
+        venue_address: option.address,
+        venue_map_url: option.mapUrl,
+        image_url: typeof option.imageUrl === 'string' && /^(https:\/\/|data:image\/)/.test(option.imageUrl) ? option.imageUrl : undefined,
+        image_urls: list(option.images).filter((url) => typeof url === 'string' && /^(https:\/\/|data:image\/)/.test(url)).slice(0, 5),
         is_final_selection: option.isFinal === true,
       })),
       opened_option_ids_snapshot: options.filter((option) => option.isOpen).map((option) => option.key),
@@ -202,6 +221,49 @@ function adaptPlan(page) {
         options.filter((option) => typeof option.votes === 'number').map((option) => [option.key, option.votes]),
       ),
     },
+  };
+}
+
+function adaptInvitations(page) {
+  return list(page.invitations).map((invitation) => ({
+    key: invitation.key,
+    name: invitation.name,
+    status: invitation.status,
+    status_label: invitation.statusLabel,
+    channel: invitation.channel,
+    invite_href: invitation.inviteHref,
+    can_revoke: invitation.canRevoke === true,
+  }));
+}
+
+function adaptRegistrations(page) {
+  return list(page.registrations).map((registration) => ({
+    key: registration.key,
+    name: registration.name,
+    registration_status: registration.registrationStatus,
+    payment_status: registration.paymentStatus,
+    status_label: registration.statusLabel,
+    invoice_amount: registration.invoiceAmount,
+    selected_options: list(registration.selectedOptions),
+    rejection_message: registration.rejectionMessage,
+    can_reject: registration.canReject === true,
+    can_checkout: registration.canCheckout === true,
+    can_cancel_checkout: registration.canCancelCheckout === true,
+    can_refund: registration.canRefund === true,
+  }));
+}
+
+function adaptOperation(page) {
+  const operation = page.operation;
+  if (!operation || typeof operation !== 'object') return null;
+  return {
+    kind: operation.kind,
+    status: operation.status,
+    label: operation.label,
+    processed: operation.processedCount,
+    total: operation.totalCount,
+    failed: operation.failedCount,
+    message: operation.message,
   };
 }
 
@@ -246,6 +308,46 @@ function adaptCalendar(page) {
  *   invoice?: object, plan?: object, invitees?: object[], viewerRole?: string, calendar?: object,
  * }}
  */
+/** Detail produk gathering — urutan kelompok & opsi dipertahankan apa adanya (urutan data seller). */
+function adaptProduct(page) {
+  const product = page.product && typeof page.product === 'object' ? page.product : {};
+  const gathering = product.gathering && typeof product.gathering === 'object' ? product.gathering : {};
+  return {
+    key: product.key,
+    name: product.name,
+    category: product.category,
+    price_label: product.priceLabel,
+    href: product.href,
+    images: list(product.images).filter((url) => typeof url === 'string'),
+    description: product.description,
+    description_html: typeof product.descriptionHtml === 'string' ? product.descriptionHtml : undefined,
+    detail_html: typeof product.detailHtml === 'string' ? product.detailHtml : undefined,
+    deposit_amount: gathering.depositAmount,
+    min_attendees: gathering.minAttendees,
+    max_attendees: gathering.maxAttendees,
+    event_date_label: gathering.eventDateLabel,
+    location: gathering.location,
+    cancellation_policy: gathering.cancellationPolicy,
+    option_groups: list(gathering.optionGroups).map((group) => ({
+      label: group.label,
+      options: list(group.options).map((option) => ({
+        key: option.key,
+        label: option.label,
+        description: option.description,
+        description_html: typeof option.descriptionHtml === 'string' ? option.descriptionHtml : undefined,
+        venue: option.venue,
+        address: option.address,
+        map_url: option.mapUrl,
+        availability_note: option.availabilityNote,
+        benefits: list(option.benefits),
+        image_url: typeof option.imageUrl === 'string' ? option.imageUrl : undefined,
+        images: list(option.images).filter((url) => typeof url === 'string'),
+      })),
+    })),
+    specifications: list(product.specifications),
+  };
+}
+
 function adaptPage(page) {
   if (!page || typeof page !== 'object' || !PAGE_SLUGS[page.type]) return null;
   const base = {
@@ -277,8 +379,26 @@ function adaptPage(page) {
           rsvp_status: invitee.rsvpStatus,
           rsvp_label: invitee.rsvpLabel,
         })),
+        // Kontrak v2: data pengelolaan initiator (tanpa kontak peserta).
+        invitations: adaptInvitations(page),
+        registrations: adaptRegistrations(page),
+        operation: adaptOperation(page),
         viewerRole: page.viewerRole,
       };
+    case 'gathering_invitation':
+      // Undangan: bentuk kontrak dipakai langsung (camelCase) — sudah tersanitasi & tanpa kontak mentah.
+      return {
+        ...base,
+        invitationPage: {
+          invitation: page.invitation && typeof page.invitation === 'object' ? page.invitation : {},
+          optionGroups: list(page.optionGroups),
+          viewer: page.viewer && typeof page.viewer === 'object' ? page.viewer : { state: 'closed' },
+          loginHref: typeof page.loginHref === 'string' ? page.loginHref : '',
+          switchAccountHref: typeof page.switchAccountHref === 'string' ? page.switchAccountHref : '',
+        },
+      };
+    case 'product_detail':
+      return { ...base, product: adaptProduct(page), related: list(page.related), loggedIn: page.loggedIn === true };
     default:
       return null;
   }

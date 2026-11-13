@@ -7,13 +7,13 @@
   },
   "templateTheme": {
     "colors": {
-      "background": "#F0F7F8",
-      "surface": "#FFFFFF",
-      "text": "#0F172A",
-      "textMuted": "#64748B",
-      "accent": "#006699",
-      "accentHover": "#00557A",
-      "border": "#B3D4DD",
+      "background": "#ffffff",
+      "surface": "#f4f4f5",
+      "text": "#18181b",
+      "textMuted": "#71717a",
+      "accent": "#00608e",
+      "accentHover": "#00547d",
+      "border": "#e4e4e7",
       "success": "#0E9F6E"
     }
   },
@@ -60,6 +60,9 @@
     "currency": "IDR",
     "timezone": "Asia/Jakarta",
     "type": "orders",
+    "actions": [
+      "transaction.chat.open"
+    ],
     "transactions": [
       {
         "key": "k_trx_trx_family_camp",

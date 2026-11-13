@@ -7,13 +7,13 @@
   },
   "templateTheme": {
     "colors": {
-      "background": "#F0F7F8",
-      "surface": "#FFFFFF",
-      "text": "#0F172A",
-      "textMuted": "#64748B",
-      "accent": "#006699",
-      "accentHover": "#00557A",
-      "border": "#B3D4DD",
+      "background": "#ffffff",
+      "surface": "#f4f4f5",
+      "text": "#18181b",
+      "textMuted": "#71717a",
+      "accent": "#00608e",
+      "accentHover": "#00547d",
+      "border": "#e4e4e7",
       "success": "#0E9F6E"
     }
   },
@@ -32,7 +32,7 @@
     "tagihanHref": "/kumpul-demo/tagihan"
   },
   "page": {
-    "contractVersion": 1,
+    "contractVersion": 2,
     "currency": "IDR",
     "timezone": "Asia/Jakarta",
     "type": "gathering_plan",
@@ -40,11 +40,13 @@
       "key": "k_plan_plan_workshop",
       "planNumber": "KMP-2026-038",
       "title": "Workshop Keramik",
-      "status": "PREORDER",
-      "statusLabel": "Pra-pesan",
-      "workflowStep": "PLAN",
-      "workflowStepLabel": "Atur rencana",
+      "status": "RSVP_OPEN",
+      "statusLabel": "RSVP dibuka",
+      "workflowStep": "INVITATION_CONFIRMATION",
+      "workflowStepLabel": "Konfirmasi undangan",
       "invitePolicy": "OPEN",
+      "canCancel": true,
+      "publicInvitationHref": "/kumpul-demo/gathering/invite/k_inv_public_workshop",
       "occurrence": {
         "status": "RSVP_OPEN",
         "statusLabel": "RSVP dibuka",
@@ -64,7 +66,14 @@
             "description": "Workshop membuat mug untuk pemula.",
             "venue": "Studio Tanah, Kemang",
             "isOpen": true,
-            "isFinal": false
+            "isFinal": false,
+            "address": "Jl. Kemang Raya No. 12, Jakarta Selatan 12730",
+            "mapUrl": "https://maps.app.goo.gl/StudioTanahKemang",
+            "imageUrl": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 160 160'%3E%3Crect width='160' height='160' fill='%23006699'/%3E%3Ccircle cx='80' cy='80' r='38' fill='%23e6f4f6'/%3E%3C/svg%3E",
+            "images": [
+              "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 160 160'%3E%3Crect width='160' height='160' fill='%23006699'/%3E%3Ccircle cx='80' cy='80' r='38' fill='%23e6f4f6'/%3E%3C/svg%3E",
+              "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 160 120'%3E%3Crect width='160' height='120' fill='%234338ca'/%3E%3Ccircle cx='80' cy='60' r='30' fill='%23e0e7ff'/%3E%3C/svg%3E"
+            ]
           },
           {
             "key": "k_opt_opt_session_afternoon",
@@ -73,9 +82,31 @@
             "description": "Workshop membuat keramik untuk pemula.",
             "venue": "Studio Tanah, Kemang",
             "isOpen": true,
+            "isFinal": false,
+            "address": "Jl. Kemang Raya No. 12, Jakarta Selatan 12730",
+            "mapUrl": "https://maps.app.goo.gl/StudioTanahKemang"
+          },
+          {
+            "key": "k_opt_opt_menu_box",
+            "group": "Konsumsi",
+            "label": "Paket nasi kotak",
+            "description": "Nasi, lauk, dan air mineral.\n• Bisa request tanpa pedas",
+            "isOpen": true,
+            "isFinal": false,
+            "imageUrl": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 160 160'%3E%3Crect width='160' height='160' fill='%230e7490'/%3E%3Ccircle cx='80' cy='80' r='38' fill='%23d9eff0'/%3E%3C/svg%3E",
+            "descriptionHtml": "<p>Nasi, lauk, dan <strong>air mineral</strong>.</p><ul><li>Bisa request tanpa pedas</li></ul>"
+          },
+          {
+            "key": "k_opt_opt_menu_snack",
+            "group": "Konsumsi",
+            "label": "Snack box",
+            "description": "Dua kue dan teh kemasan.",
+            "isOpen": true,
             "isFinal": false
           }
-        ]
+        ],
+        "locationAddress": "Jl. Kemang Raya No. 12, Jakarta Selatan 12730",
+        "locationMapUrl": "https://maps.app.goo.gl/StudioTanahKemang"
       }
     },
     "invitees": [
@@ -95,9 +126,87 @@
         "rsvpLabel": "Hadir"
       }
     ],
+    "invitations": [
+      {
+        "key": "k_inv_public_workshop",
+        "name": "Undangan terbuka",
+        "status": "PENDING",
+        "statusLabel": "Aktif",
+        "channel": "public",
+        "inviteHref": "/kumpul-demo/gathering/invite/k_inv_public_workshop",
+        "canRevoke": false
+      },
+      {
+        "key": "k_inv_dewi",
+        "name": "Dewi Anggraini",
+        "status": "ACCEPTED",
+        "statusLabel": "Diterima",
+        "channel": "email",
+        "inviteHref": "/kumpul-demo/gathering/invite/id/k_inv_dewi",
+        "canRevoke": false
+      },
+      {
+        "key": "k_inv_rio",
+        "name": "Rio Saputra",
+        "status": "PENDING",
+        "statusLabel": "Menunggu jawaban",
+        "channel": "whatsapp",
+        "inviteHref": "/kumpul-demo/gathering/invite/id/k_inv_rio",
+        "canRevoke": true
+      }
+    ],
+    "registrations": [
+      {
+        "key": "k_reg_dewi",
+        "name": "Dewi Anggraini",
+        "registrationStatus": "RSVP_CONFIRMED",
+        "paymentStatus": "UNPAID",
+        "statusLabel": "Hadir · belum dibayar",
+        "invoiceAmount": 425000,
+        "selectedOptions": [
+          "Sesi · Sesi pagi"
+        ],
+        "canReject": true,
+        "canCheckout": false,
+        "canCancelCheckout": false,
+        "canRefund": false
+      },
+      {
+        "key": "k_reg_bima",
+        "name": "Bima Pratama",
+        "registrationStatus": "RSVP_CONFIRMED",
+        "paymentStatus": "UNPAID",
+        "statusLabel": "Hadir · belum dibayar",
+        "invoiceAmount": 425000,
+        "selectedOptions": [
+          "Sesi · Sesi siang"
+        ],
+        "canReject": true,
+        "canCheckout": false,
+        "canCancelCheckout": false,
+        "canRefund": false
+      },
+      {
+        "key": "k_reg_sari",
+        "name": "Sari Wulandari",
+        "registrationStatus": "RSVP_CONFIRMED",
+        "paymentStatus": "UNPAID",
+        "statusLabel": "Hadir · belum dibayar",
+        "invoiceAmount": 425000,
+        "selectedOptions": [
+          "Sesi · Sesi pagi"
+        ],
+        "canReject": true,
+        "canCheckout": false,
+        "canCancelCheckout": false,
+        "canRefund": false
+      }
+    ],
     "viewerRole": "initiator",
     "actions": [
-      "gathering.respond"
+      "gathering.registrations.reject",
+      "gathering.reservations.confirm",
+      "gathering.cancel"
     ]
   }
 }
