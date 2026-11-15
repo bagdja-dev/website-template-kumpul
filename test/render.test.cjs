@@ -1250,6 +1250,19 @@ test('draft order page renders praorder steps with every field type in the Kumpu
   assert.match(output, /aria-current="page"[^>]*>[^<]*<svg[\s\S]*?Keranjang|data-bagdja-nav="cart" aria-current="page"/);
 });
 
+test('draft order date fields use the gathering date picker and numbers show thousand separators', () => {
+  const output = html(fixture('draft-order'));
+  // Tanggal: input asli (web) + tombol pemilih HP, sama dengan input tanggal gathering.
+  assert.match(output, /<span class="kumpul-datetime kumpul-draft-datetime"><input[^>]*data-bagdja-field="praorder.tanggal_berangkat"[^>]*data-kumpul-datetime-input=""/);
+  assert.match(output, /data-kumpul-datetime-mode="date"[^>]*data-kumpul-datetime-allow-past=""/);
+  assert.match(output, /data-kumpul-datetime-mode="datetime"/);
+  assert.match(output, /data-kumpul-datetime-text="">[^<]*20 Des 2026 · 05\.30 WIB</);
+  // Angka: tampilan berpemisah ribuan, nilai mentah di input tersembunyi yang dibaca host.
+  assert.match(output, /data-kumpul-number-display=""[^>]*value="1\.250\.000,5"|value="1\.250\.000,5"[^>]*data-kumpul-number-display=""/);
+  assert.match(output, /type="hidden"[^>]*data-bagdja-field="praorder.anggaran"[^>]*value="1250000\.5"|type="hidden"[^>]*value="1250000\.5"[^>]*data-bagdja-field="praorder.anggaran"/);
+  assert.doesNotMatch(output, /type="number"[^>]*data-bagdja-field="praorder\./);
+});
+
 test('draft order content announces the cart menu inside the shell', () => {
   const output = html({ ...fixture('draft-order'), contentOnly: true });
   assert.match(output, /data-bagdja-active-nav="[^"]*\bcart\b[^"]*"/);

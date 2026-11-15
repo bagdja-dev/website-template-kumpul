@@ -198,19 +198,22 @@ import QRCode from 'qrcode';
   // Pemilih tanggal & jam untuk HP (bottom sheet) — menulis ke input datetime-local asli
   // (`data-bagdja-field`), sehingga intent ke host tidak berubah. Web tetap memakai input bawaan.
   const pad2 = (value) => String(value).padStart(2, '0');
-  const formatDateTimeLabel = (value) => {
-    const match = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/.exec(value || '');
-    if (!match) return '';
+  // Mode `date` (field flow bertipe tanggal): kalender saja, nilai YYYY-MM-DD.
+  const isDateOnly = (trigger) => trigger.getAttribute('data-kumpul-datetime-mode') === 'date';
+  const formatDateTimeLabel = (value, dateOnly = false) => {
+    const match = /^(\d{4})-(\d{2})-(\d{2})(?:T(\d{2}):(\d{2}))?/.exec(value || '');
+    if (!match || (!dateOnly && match[4] === undefined)) return '';
     const date = new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
     const day = new Intl.DateTimeFormat('id-ID', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }).format(date);
-    return `${day} · ${match[4]}.${match[5]} WIB`;
+    return dateOnly ? day : `${day} · ${match[4]}.${match[5]} WIB`;
   };
   const syncDateTimeTrigger = (trigger) => {
     const input = trigger.closest('.kumpul-datetime')?.querySelector('[data-kumpul-datetime-input]');
     const textNode = trigger.querySelector('[data-kumpul-datetime-text]');
     if (!(input instanceof HTMLInputElement) || !textNode) return;
-    const label = formatDateTimeLabel(input.value);
-    textNode.textContent = label || 'Pilih tanggal & jam';
+    const dateOnly = isDateOnly(trigger);
+    const label = formatDateTimeLabel(input.value, dateOnly);
+    textNode.textContent = label || (dateOnly ? 'Pilih tanggal' : 'Pilih tanggal & jam');
     trigger.toggleAttribute('data-empty', !label);
   };
   onMount((root) => { root.querySelectorAll('[data-kumpul-datetime-trigger]').forEach(syncDateTimeTrigger); });
@@ -226,13 +229,18 @@ import QRCode from 'qrcode';
       (document.querySelector('.kumpul-template') || document.body).append(dateTimeSheet);
     }
     const sheet = dateTimeSheet;
+    const dateOnly = isDateOnly(trigger);
+    const allowPast = trigger.hasAttribute('data-kumpul-datetime-allow-past');
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    const match = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/.exec(input.value || '');
-    const fallback = new Date(today.getTime() + 86400000);
+    const match = /^(\d{4})-(\d{2})-(\d{2})(?:T(\d{2}):(\d{2}))?/.exec(input.value || '');
+    const fallback = allowPast ? today : new Date(today.getTime() + 86400000);
     const state = match
-      ? { year: +match[1], month: +match[2] - 1, day: +match[3], hour: +match[4], minute: +match[5] }
+      ? { year: +match[1], month: +match[2] - 1, day: +match[3], hour: match[4] === undefined ? 9 : +match[4], minute: match[5] === undefined ? 0 : +match[5] }
       : { year: fallback.getFullYear(), month: fallback.getMonth(), day: null, hour: 9, minute: 0 };
+    const valueOf = () => (dateOnly
+      ? `${state.year}-${pad2(state.month + 1)}-${pad2(state.day)}`
+      : `${state.year}-${pad2(state.month + 1)}-${pad2(state.day)}T${pad2(state.hour)}:${pad2(state.minute)}`);
     const view = { year: state.year, month: state.month };
     const minutes = [0, 15, 30, 45].includes(state.minute) ? [0, 15, 30, 45] : [0, 15, 30, 45, state.minute].sort((a, b) => a - b);
     const label = trigger.getAttribute('data-label') || 'Tanggal';
@@ -241,24 +249,24 @@ import QRCode from 'qrcode';
       const first = new Date(view.year, view.month, 1);
       const offset = (first.getDay() + 6) % 7; // Senin = kolom pertama
       const daysInMonth = new Date(view.year, view.month + 1, 0).getDate();
-      const atCurrentMonth = view.year === today.getFullYear() && view.month === today.getMonth();
+      const atCurrentMonth = !allowPast && view.year === today.getFullYear() && view.month === today.getMonth();
       const monthLabel = new Intl.DateTimeFormat('id-ID', { month: 'long', year: 'numeric' }).format(first);
       const cells = [];
       for (let i = 0; i < offset; i += 1) cells.push('<span></span>');
       for (let day = 1; day <= daysInMonth; day += 1) {
         const date = new Date(view.year, view.month, day);
         const selected = state.day === day && state.month === view.month && state.year === view.year;
-        cells.push(`<button type="button" data-dt-day="${day}"${date < today ? ' disabled' : ''}${date.getTime() === today.getTime() ? ' data-today' : ''} aria-pressed="${selected}">${day}</button>`);
+        cells.push(`<button type="button" data-dt-day="${day}"${!allowPast && date < today ? ' disabled' : ''}${date.getTime() === today.getTime() ? ' data-today' : ''} aria-pressed="${selected}">${day}</button>`);
       }
-      const summary = state.day
-        ? formatDateTimeLabel(`${state.year}-${pad2(state.month + 1)}-${pad2(state.day)}T${pad2(state.hour)}:${pad2(state.minute)}`)
-        : 'Pilih tanggal dulu';
-      sheet.innerHTML = `<div class="kumpul-dt-head"><div><strong></strong><span>Waktu Indonesia Barat</span></div><button type="button" class="kumpul-dt-close" data-dt-cancel aria-label="Tutup">×</button></div>`
+      const summary = state.day ? formatDateTimeLabel(valueOf(), dateOnly) : 'Pilih tanggal dulu';
+      sheet.innerHTML = `<div class="kumpul-dt-head"><div><strong></strong>${dateOnly ? '' : '<span>Waktu Indonesia Barat</span>'}</div><button type="button" class="kumpul-dt-close" data-dt-cancel aria-label="Tutup">×</button></div>`
         + `<div class="kumpul-dt-body">`
         + `<div><div class="kumpul-dt-month"><button type="button" data-dt-month="-1" aria-label="Bulan sebelumnya"${atCurrentMonth ? ' disabled' : ''}>‹</button><strong>${monthLabel}</strong><button type="button" data-dt-month="1" aria-label="Bulan berikutnya">›</button></div>`
         + `<div class="kumpul-dt-grid">${['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'].map((name) => `<span>${name}</span>`).join('')}${cells.join('')}</div></div>`
-        + `<div><div class="kumpul-dt-label">Jam</div><div class="kumpul-dt-hours">${Array.from({ length: 24 }, (_, hour) => `<button type="button" data-dt-hour="${hour}" aria-pressed="${state.hour === hour}">${pad2(hour)}</button>`).join('')}</div></div>`
-        + `<div><div class="kumpul-dt-label">Menit</div><div class="kumpul-dt-minutes">${minutes.map((minute) => `<button type="button" data-dt-minute="${minute}" aria-pressed="${state.minute === minute}">${pad2(minute)}</button>`).join('')}</div></div>`
+        + (dateOnly ? '' : ``
+          + `<div><div class="kumpul-dt-label">Jam</div><div class="kumpul-dt-hours">${Array.from({ length: 24 }, (_, hour) => `<button type="button" data-dt-hour="${hour}" aria-pressed="${state.hour === hour}">${pad2(hour)}</button>`).join('')}</div></div>`
+          + `<div><div class="kumpul-dt-label">Menit</div><div class="kumpul-dt-minutes">${minutes.map((minute) => `<button type="button" data-dt-minute="${minute}" aria-pressed="${state.minute === minute}">${pad2(minute)}</button>`).join('')}</div></div>`
+        )
         + `<div class="kumpul-dt-summary">${summary}</div>`
         + `</div><div class="kumpul-dt-foot"><button type="button" data-dt-clear>Kosongkan</button><button type="button" class="kumpul-dt-save" data-dt-save${state.day ? '' : ' disabled'}>Simpan</button></div>`;
       sheet.querySelector('.kumpul-dt-head strong').textContent = label;
@@ -299,7 +307,7 @@ import QRCode from 'qrcode';
       if (minute) { state.minute = Number(minute.getAttribute('data-dt-minute')); render(); return; }
       if (target.closest('[data-dt-clear]')) { commit(''); return; }
       if (target.closest('[data-dt-save]') && state.day) {
-        commit(`${state.year}-${pad2(state.month + 1)}-${pad2(state.day)}T${pad2(state.hour)}:${pad2(state.minute)}`);
+        commit(valueOf());
       }
     };
     render();
@@ -310,6 +318,42 @@ import QRCode from 'qrcode';
     if (!trigger) return;
     event.preventDefault();
     openDateTimeSheet(trigger);
+  });
+
+  // Input angka berpemisah ribuan (id-ID: titik = ribuan, koma = desimal). Tampilan di input teks
+  // [data-kumpul-number-display]; nilai mentah ("1234.5") ditulis ke input tersembunyi pasangannya
+  // ([data-kumpul-number-value], ber-data-bagdja-field) yang dibaca host saat simpan/kirim.
+  const groupThousands = (digits) => digits.replace(/^0+(?=\d)/, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  const parseIdNumber = (value) => {
+    const negative = /^\s*-/.test(value);
+    const cleaned = value.replace(/[^\d,]/g, '');
+    const comma = cleaned.indexOf(',');
+    const whole = comma === -1 ? cleaned : cleaned.slice(0, comma);
+    const fraction = comma === -1 ? null : cleaned.slice(comma + 1).replace(/,/g, '');
+    const sign = negative ? '-' : '';
+    const display = whole || fraction !== null
+      ? `${sign}${groupThousands(whole || '0')}${fraction !== null ? `,${fraction}` : ''}`
+      : sign;
+    const raw = whole || fraction ? `${sign}${whole.replace(/^0+(?=\d)/, '') || '0'}${fraction ? `.${fraction}` : ''}` : '';
+    return { display, raw };
+  };
+  document.addEventListener('input', (event) => {
+    const display = event.target instanceof HTMLInputElement && event.target.matches('[data-kumpul-number-display]')
+      ? event.target
+      : null;
+    if (!display) return;
+    const caret = display.selectionStart ?? display.value.length;
+    const significantBefore = display.value.slice(0, caret).replace(/[^\d,-]/g, '').length;
+    const { display: formatted, raw } = parseIdNumber(display.value);
+    display.value = formatted;
+    // Kursor tetap setelah jumlah digit/koma yang sama seperti sebelum diformat.
+    let position = 0;
+    for (let seen = 0; position < formatted.length && seen < significantBefore; position += 1) {
+      if (/[\d,-]/.test(formatted[position])) seen += 1;
+    }
+    display.setSelectionRange(position, position);
+    const hidden = display.parentElement?.querySelector('[data-kumpul-number-value]');
+    if (hidden instanceof HTMLInputElement) hidden.value = raw;
   });
 
   // Carousel gambar di popup opsi: panah menggeser satu slide, titik mengikuti posisi geser.
