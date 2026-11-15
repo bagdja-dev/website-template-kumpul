@@ -20,8 +20,8 @@
     "react": "^18.3.0"
   },
   "scripts": {
-    "build": "node scripts/build.mjs",
-    "dev": "node scripts/preview.mjs",
+    "build": "node init && node scripts/build.mjs",
+    "dev": "node init && node scripts/preview.mjs",
     "test": "npm run build && node --test",
     "prepack": "npm run build"
   },

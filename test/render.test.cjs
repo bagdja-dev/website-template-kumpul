@@ -607,6 +607,12 @@ test('renders the cart with selection, quantity, unavailable items, and gated ch
   assert.match(output, /data-cart-remove/);
   assert.match(output, /Rp 900\.000/);
   assert.match(output, /disabled=""[^>]*data-bagdja-intent="cart\.checkout"[^>]*>Lanjut ke Checkout/);
+  // Item quotation yang belum bisa checkout harus punya jalan ke halaman pengisian detail.
+  assert.match(output, /class="kumpul-cart-detail-link is-primary" href="\/kumpul-demo\/products\/ceramics">Lengkapi detail pesanan/);
+  assert.match(output, /class="kumpul-cart-detail-link" href="\/kumpul-demo\/products\/family-camp">Lihat detail pesanan/);
+  assert.match(output, /href="\/kumpul-demo\/products\/plan">Lanjutkan rencana/);
+  assert.match(output, /class="kumpul-cart-preview-note"/);
+  assert.doesNotMatch(html(live('keranjang')), /class="kumpul-cart-preview-note"/, 'catatan preview desainer tidak tampil di website live');
 
   const bridged = live('keranjang');
   bridged.bridgeVersion = 1;
