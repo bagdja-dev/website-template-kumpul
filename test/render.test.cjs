@@ -71,6 +71,10 @@ test('renders the about page story, feature grid, and gallery', () => {
   assert.match(output, /Camping bersama keluarga/);
   assert.doesNotMatch(output, /class="kumpul-hero"/);
   assert.doesNotMatch(output, /Katalog Gathering<\/h2>/);
+  // Foto galeri bisa dibuka di viewer; keterangan ikut untuk ditampilkan di bawah viewer.
+  assert.match(output, /class="kumpul-gallery-grid" data-gallery=""/);
+  assert.match(output, /data-gallery-image-open="0"[^>]*data-gallery-caption="Camping bersama keluarga"/);
+  assert.match(output, /role="button" tabindex="0"/);
 });
 
 test('renders the how-it-works page process steps and host-provided FAQs', () => {
@@ -1192,4 +1196,36 @@ test('product list section: "all" shows every type and categories narrow the lis
   const onlyA = html(withGrid({ filter_type: 'all', category_ids: ['cat-a'] }));
   assert.ok(onlyA.includes(first));
   assert.ok(!onlyA.includes(second));
+});
+
+// ── Draft pesanan (praorder sebelum penawaran) ────────────────────────────────
+
+test('draft order page renders praorder steps with every field type in the Kumpul layout', () => {
+  const output = html(fixture('draft-order'));
+  assert.match(output, /data-draft-order=""/);
+  assert.match(output, /Road Trip Pangandaran/);
+  assert.match(output, /Menunggu penawaran/);
+  assert.match(output, /class="kumpul-header"/, 'Kumpul header and navigation stay on the page');
+  // Langkah selesai menampilkan isian; langkah berjalan menampilkan form.
+  assert.match(output, /Pantai Pangandaran/);
+  assert.match(output, /type="date"[^>]*data-bagdja-field="praorder.tanggal_berangkat"|data-bagdja-field="praorder.tanggal_berangkat"[^>]*type="date"/);
+  assert.match(output, /type="datetime-local"/);
+  assert.match(output, /data-kumpul-geolocate=/);
+  assert.match(output, /<select[^>]*data-bagdja-field="praorder.armada"/);
+  assert.match(output, /data-bagdja-field="praorder.file"[^>]*data-bagdja-target="foto_rombongan"/);
+  assert.match(output, /data-bagdja-intent="order.praorder.file.remove"[^>]*data-bagdja-index="0"/);
+  assert.match(output, /data-bagdja-intent="order.praorder.submit"[^>]*data-bagdja-step="dStepKey0000002"/);
+  assert.match(output, /data-bagdja-intent="order.praorder.save"/);
+  // Langkah penjual & bayar.
+  assert.match(output, /Terbuka setelah langkah sebelumnya selesai\./);
+  assert.match(output, /data-bagdja-intent="order.draft.pay"[^>]*disabled=""|disabled=""[^>]*data-bagdja-intent="order.draft.pay"/);
+  assert.match(output, /data-bagdja-intent="order.draft.cancel"/);
+  // Menu Keranjang aktif (header & dock).
+  assert.match(output, /aria-current="page"[^>]*>[^<]*<svg[\s\S]*?Keranjang|data-bagdja-nav="cart" aria-current="page"/);
+});
+
+test('draft order content announces the cart menu inside the shell', () => {
+  const output = html({ ...fixture('draft-order'), contentOnly: true });
+  assert.match(output, /data-bagdja-active-nav="[^"]*\bcart\b[^"]*"/);
+  assert.doesNotMatch(output, /class="kumpul-header"/);
 });
