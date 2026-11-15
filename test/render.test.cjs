@@ -140,6 +140,26 @@ test('renders the calendar page from props.page with local plan and invitation c
   assert.ok((output.match(/data-calendar-card=/g) || []).length >= 4);
 });
 
+test('calendar shows services on every day they span and every stage (incl. undated) in the services tab', () => {
+  const output = html(fixture('calendar'));
+  assert.match(output, /data-calendar-tab="services"/);
+  assert.match(output, /data-calendar-panel="services"/);
+  assert.match(output, /kumpul-calendar-event-service[^"]*"[^>]*data-calendar-date="2026-12-05"/);
+  for (const day of ['2026-12-24', '2026-12-25', '2026-12-26']) {
+    assert.match(output, new RegExp(`kumpul-calendar-event-service[^"]*"[^>]*data-calendar-date="${day}"`));
+  }
+  assert.match(output, /09\.00–13\.00/);
+  assert.match(output, /Sepanjang hari/);
+  assert.match(output, /href="\/kumpul-demo\/cart\/order\/k_service_ord_villa"[^>]*>Bayar pesanan/);
+  assert.match(output, /data-calendar-service-status="confirmed"/);
+  // Jasa belum bertanggal: tampil di tab Jadwal Jasa (bukan di grid kalender).
+  assert.match(output, /data-calendar-service-status="planning"[^]*?Katering Syukuran[^]*?Jadwal belum ditentukan[^]*?>Lengkapi pesanan</);
+  assert.equal((output.match(/data-calendar-event=""[^>]*>(?:(?!<\/article>)[^])*Katering Syukuran/g) || []).length, 0);
+  for (const filter of ['all', 'planning', 'payment', 'confirmed', 'completed']) {
+    assert.match(output, new RegExp(`data-service-filter="${filter}"`));
+  }
+});
+
 test('renders live calendar data on the seller website and only notes preview data in preview', () => {
   const output = html(live('calendar'));
   assert.match(output, /Family Camp Lembang/);
@@ -587,6 +607,12 @@ test('renders the cart with selection, quantity, unavailable items, and gated ch
   assert.match(output, /data-cart-remove/);
   assert.match(output, /Rp 900\.000/);
   assert.match(output, /disabled=""[^>]*data-bagdja-intent="cart\.checkout"[^>]*>Lanjut ke Checkout/);
+  // Item quotation yang belum bisa checkout harus punya jalan ke halaman pengisian detail.
+  assert.match(output, /class="kumpul-cart-detail-link is-primary" href="\/kumpul-demo\/products\/ceramics">Lengkapi detail pesanan/);
+  assert.match(output, /class="kumpul-cart-detail-link" href="\/kumpul-demo\/products\/family-camp">Lihat detail pesanan/);
+  assert.match(output, /href="\/kumpul-demo\/products\/plan">Lanjutkan rencana/);
+  assert.match(output, /class="kumpul-cart-preview-note"/);
+  assert.doesNotMatch(html(live('keranjang')), /class="kumpul-cart-preview-note"/, 'catatan preview desainer tidak tampil di website live');
 
   const bridged = live('keranjang');
   bridged.bridgeVersion = 1;

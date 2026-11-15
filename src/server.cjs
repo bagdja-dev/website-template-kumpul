@@ -137,9 +137,11 @@ function CartSection({ props }) {
             h('p', null, 'Tinjau item gathering sebelum melanjutkan ke checkout.'),
           ),
         ),
-        h('p', { className: 'kumpul-cart-preview-note', role: 'note' },
-          'Preview desainer · data contoh saja. Perubahan hanya berlaku di halaman ini; checkout dikelola oleh host Bagdja.',
-        ),
+        props.isPreview === true
+          ? h('p', { className: 'kumpul-cart-preview-note', role: 'note' },
+            'Preview desainer · data contoh saja. Perubahan hanya berlaku di halaman ini; checkout dikelola oleh host Bagdja.',
+          )
+          : null,
         h('div', { className: 'kumpul-cart-layout' },
           h('div', { className: 'kumpul-cart-items' },
             h('div', { className: 'kumpul-cart-select-all' },
@@ -175,13 +177,22 @@ function CartSection({ props }) {
                 h('div', { className: 'kumpul-cart-art', 'aria-hidden': 'true' }, text(item.emoji, isPlan ? '◷' : '✳')),
                 h('div', { className: 'kumpul-cart-copy' },
                   h('span', { className: 'kumpul-cart-kind' }, isPlan ? 'Rencana gathering' : text(item.category, 'Gathering')),
-                  h('h2', null, text(item.name, 'Item gathering')),
+                  h('h2', null, item.detail_href
+                    ? h('a', { className: 'kumpul-cart-name-link', href: item.detail_href }, text(item.name, 'Item gathering'))
+                    : text(item.name, 'Item gathering')),
                   item.variant ? h('p', { className: 'kumpul-cart-variant' }, item.variant) : null,
                   h('p', { className: 'kumpul-cart-detail' }, isPlan
                     ? text(item.blocked_reason, 'Rencana gathering belum masuk tahap pembayaran')
                     : text(item.subtitle, 'Informasi gathering dan pilihan peserta')),
                   item.blocked_reason && !isPlan
                     ? h('p', { className: 'kumpul-cart-blocked' }, item.blocked_reason)
+                    : null,
+                  // Item quotation/praorder belum bisa checkout: arahkan ke halaman pengisian detail pesanan.
+                  item.detail_href
+                    ? h('a', {
+                      className: `kumpul-cart-detail-link${canCheckout ? '' : ' is-primary'}`,
+                      href: item.detail_href,
+                    }, isPlan ? 'Lanjutkan rencana' : canCheckout ? 'Lihat detail pesanan' : 'Lengkapi detail pesanan')
                     : null,
                 ),
                 h('div', { className: 'kumpul-cart-item-controls' },
@@ -3677,11 +3688,66 @@ function calendarMonthCells(monthKey, events, selectedDate) {
   });
 }
 
+/** Kunci tanggal (YYYY-MM-DD, jam lokal dari ISO ber-offset) yang dilalui jadwal jasa; maks. 62 hari. */
+function serviceDateKeys(service) {
+  const start = calendarDateKey(service.start_at);
+  if (!start) return [];
+  const end = calendarDateKey(service.end_at) || start;
+  const keys = [];
+  const cursor = new Date(`${start}T00:00:00Z`);
+  while (keys.length < 62) {
+    const key = cursor.toISOString().slice(0, 10);
+    keys.push(key);
+    if (key >= end) break;
+    cursor.setUTCDate(cursor.getUTCDate() + 1);
+  }
+  return keys;
+}
+
+function serviceTimeLabel(service) {
+  if (service.all_day) return 'Sepanjang hari';
+  const start = formatCalendarTime(service.start_at);
+  const sameDay = !service.end_at || calendarDateKey(service.end_at) === calendarDateKey(service.start_at);
+  const end = service.end_at && sameDay ? formatCalendarTime(service.end_at) : '';
+  return end ? `${start}–${end}` : start;
+}
+
+const serviceStatuses = [
+  ['all', 'Semua'],
+  ['planning', 'Perencanaan'],
+  ['payment', 'Pembayaran'],
+  ['confirmed', 'Dikonfirmasi'],
+  ['completed', 'Selesai'],
+];
+
+const serviceActionLabels = {
+  planning: 'Lengkapi pesanan',
+  payment: 'Bayar pesanan',
+  confirmed: 'Lihat pesanan',
+  completed: 'Lihat pesanan',
+};
+
+function serviceScheduleLabel(service) {
+  if (!calendarDateKey(service.start_at)) return 'Jadwal belum ditentukan';
+  const start = formatCalendarDate(service.start_at, { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+  const endKey = calendarDateKey(service.end_at);
+  const multiDay = endKey && endKey !== calendarDateKey(service.start_at);
+  if (service.all_day) {
+    return multiDay ? `${start} – ${formatCalendarDate(service.end_at, { day: 'numeric', month: 'short', year: 'numeric' })}` : `${start} · sepanjang hari`;
+  }
+  if (multiDay) {
+    return `${start} ${formatCalendarTime(service.start_at)} – ${formatCalendarDate(service.end_at, { day: 'numeric', month: 'short' })} ${formatCalendarTime(service.end_at)} WIB`;
+  }
+  return `${start} · ${serviceTimeLabel(service)} WIB`;
+}
+
 function CalendarSection({ props, section }) {
   const content = section?.content || {};
   const isPreview = props.isPreview === true;
   const plans = list(content.plans);
   const invitations = list(content.invitations);
+  // Jasa belum bertanggal tetap tampil di tab Jadwal Jasa; grid kalender hanya memuat yang bertanggal.
+  const services = list(content.services);
   const attentionCount = invitations.filter((invitation) => invitation.needs_action === true).length;
   const events = [
     ...plans.filter((plan) => calendarDateKey(plan.event_date)).map((plan) => ({
@@ -3704,6 +3770,18 @@ function CalendarSection({ props, section }) {
       location: text(invitation.event_location),
       href: invitation.detail_href,
     })),
+    // Jasa multi-hari tampil di setiap tanggal yang dilaluinya.
+    ...services.filter((service) => calendarDateKey(service.start_at)).flatMap((service) => serviceDateKeys(service).map((dateKey, dayIndex) => ({
+      id: `${service.id}-${dateKey}`,
+      type: 'service',
+      typeLabel: 'Jasa',
+      title: text(service.title, 'Jasa'),
+      statusLabel: text(service.status_label, 'Terjadwal'),
+      event_date: dayIndex === 0 ? service.start_at : `${dateKey}T00:00:00+07:00`,
+      timeLabel: dayIndex === 0 ? serviceTimeLabel(service) : 'Lanjutan',
+      location: '',
+      href: service.detail_href,
+    }))),
   ].sort((left, right) => new Date(left.event_date).getTime() - new Date(right.event_date).getTime());
   const initialMonth = calendarMonthKey(content.month, events[0]?.event_date);
   const initialDate = events.find((event) => calendarDateKey(event.event_date).startsWith(`${initialMonth}-`));
@@ -3716,7 +3794,7 @@ function CalendarSection({ props, section }) {
         h('p', { className: 'kumpul-eyebrow' }, 'Acara Anda'),
         h('h1', { className: 'kumpul-calendar-title' }, text(content.title, 'Kalender Acara')),
         h('p', { className: 'kumpul-calendar-description', 'data-calendar-description': '' },
-          'Lihat jadwal gathering, rencana, dan undangan Anda dalam satu kalender.',
+          'Lihat jadwal gathering, rencana, undangan, dan jasa Anda dalam satu kalender.',
         ),
       ),
       h('div', { className: 'kumpul-calendar-stats', 'aria-label': 'Ringkasan kalender' },
@@ -3724,6 +3802,7 @@ function CalendarSection({ props, section }) {
           [plans.length, 'rencana'],
           [invitations.length, 'undangan'],
           [attentionCount, 'perlu tindakan'],
+          ...(services.length ? [[services.length, 'pesanan jasa']] : []),
         ].map(([value, label]) => h('div', { className: 'kumpul-calendar-stat', key: label },
           h('strong', null, String(value)),
           h('span', null, label),
@@ -3762,6 +3841,14 @@ function CalendarSection({ props, section }) {
       }, 'Undangan', h('span', null, String(invitations.length)),
         attentionCount ? h('b', { 'aria-label': `${attentionCount} perlu tindakan` }, String(attentionCount)) : null,
       ),
+      h('button', {
+        type: 'button',
+        role: 'tab',
+        id: 'calendar-tab-services',
+        'aria-controls': 'calendar-panel-services',
+        'aria-selected': 'false',
+        'data-calendar-tab': 'services',
+      }, 'Jadwal Jasa', h('span', null, String(services.length))),
     ),
     h('div', {
       id: 'calendar-panel-calendar',
@@ -3817,7 +3904,7 @@ function CalendarSection({ props, section }) {
             hidden: calendarDateKey(event.event_date) !== selectedDate,
             key: event.id || index,
           },
-          h('div', { className: 'kumpul-calendar-event-time' }, formatCalendarTime(event.event_date) || 'Acara'),
+          h('div', { className: 'kumpul-calendar-event-time' }, event.timeLabel || formatCalendarTime(event.event_date) || 'Acara'),
           h('div', { className: 'kumpul-calendar-event-copy' },
             h('span', { className: 'kumpul-calendar-event-kind' }, event.typeLabel),
             h('h4', null, event.href
@@ -3930,6 +4017,52 @@ function CalendarSection({ props, section }) {
           className: 'kumpul-calendar-empty',
           hidden: invitations.length > 0,
         }, 'Belum ada undangan. Undangan acara yang dikirim ke akun Anda akan muncul di sini.'),
+      ),
+    ),
+    h('div', {
+      id: 'calendar-panel-services',
+      role: 'tabpanel',
+      'aria-labelledby': 'calendar-tab-services',
+      'data-calendar-panel': 'services',
+      hidden: true,
+    },
+      h('nav', { className: 'kumpul-calendar-filters', 'aria-label': 'Filter tahap jasa' },
+        ...serviceStatuses.map(([filter, label]) => h('button', {
+          type: 'button',
+          'aria-pressed': filter === 'all' ? 'true' : 'false',
+          'data-service-filter': filter,
+          key: filter,
+        }, label, h('span', null, String(filter === 'all' ? services.length : services.filter((service) => service.status === filter).length)))),
+      ),
+      h('div', { className: 'kumpul-calendar-list', 'data-calendar-list': 'services' },
+        ...services.map((service, index) => h('article', {
+          className: 'kumpul-calendar-card kumpul-calendar-service-card',
+          'data-calendar-service-status': service.status,
+          'data-service-card': '',
+          key: service.id || index,
+        },
+        service.image_url
+          ? h('img', { className: 'kumpul-calendar-service-image', src: service.image_url, alt: '', loading: 'lazy' })
+          : h('span', { className: 'kumpul-calendar-service-image is-empty', 'aria-hidden': 'true' }, h(Icon, { name: 'calendar' })),
+        h('div', { className: 'kumpul-calendar-card-copy' },
+          h('div', { className: 'kumpul-calendar-card-title' },
+            h('h2', null, text(service.title, 'Jasa')),
+            h('span', { className: 'kumpul-calendar-status' }, text(service.status_label, 'Terjadwal')),
+          ),
+          h('p', { className: 'kumpul-calendar-meta' }, serviceScheduleLabel(service)),
+          Number(service.quantity) > 1 ? h('p', { className: 'kumpul-calendar-meta' }, `${Number(service.quantity)} item`) : null,
+        ),
+        service.detail_href
+          ? h('a', { className: 'kumpul-calendar-action', href: service.detail_href }, serviceActionLabels[service.status] || 'Lihat pesanan')
+          : null,
+        )),
+        h('p', {
+          className: 'kumpul-calendar-empty',
+          hidden: services.length > 0,
+        }, 'Belum ada pesanan jasa. Pesanan jasa dengan penawaran akan dipantau dari sini.'),
+        services.length
+          ? h('p', { className: 'kumpul-calendar-empty', hidden: true, 'data-service-filter-empty': '' }, 'Tidak ada jasa pada tahap ini.')
+          : null,
       ),
     ),
   );
@@ -4197,7 +4330,7 @@ function MobileDock(props) {
 
 function styles(colors) {
   return `
-    .kumpul-cart{max-width:1080px;margin:0 auto}.kumpul-cart-heading h1{margin:0;font-size:clamp(30px,4vw,40px);line-height:1.15;letter-spacing:-.04em}.kumpul-cart-heading h1 span{margin-left:9px;color:var(--kt-muted);font-size:14px;font-weight:500;letter-spacing:0}.kumpul-cart-heading>div>p:last-child{margin:8px 0 0;color:var(--kt-muted);font-size:12px}.kumpul-cart-preview-note{margin:18px 0 0;padding:10px 13px;border:1px solid var(--kt-border);border-radius:12px;background:var(--kt-surface);color:var(--kt-muted);font-size:10px}.kumpul-cart-layout{margin-top:22px;display:grid;grid-template-columns:minmax(0,1fr) 300px;align-items:start;gap:22px}.kumpul-cart-select-all{margin-bottom:10px}.kumpul-cart-select-all button{padding:8px 0;border:0;background:none;color:var(--kt-muted);font:inherit;font-size:10px;font-weight:750;cursor:pointer}.kumpul-cart-list{display:grid;gap:11px}.kumpul-cart-item{padding:15px;display:grid;grid-template-columns:24px 70px minmax(0,1fr) auto;align-items:start;gap:13px;border:1px solid var(--kt-border);border-radius:16px;background:var(--kt-surface)}.kumpul-cart-choice{padding-top:4px;display:flex;justify-content:center}.kumpul-cart-choice input{width:17px;height:17px;accent-color:var(--kt-accent)}.kumpul-cart-choice input:disabled{opacity:.4}.kumpul-cart-art{width:70px;height:70px;display:grid;place-items:center;border:1px solid var(--kt-border);border-radius:14px;background:var(--kt-bg);color:var(--kt-accent);font-size:29px}.kumpul-cart-copy{min-width:0}.kumpul-cart-kind{color:var(--kt-accent);font-size:8px;font-weight:800;letter-spacing:.1em;text-transform:uppercase}.kumpul-cart-copy h2{margin:4px 0 0;font-size:13px}.kumpul-cart-detail,.kumpul-cart-variant{margin:5px 0 0;color:var(--kt-muted);font-size:10px}.kumpul-cart-blocked{margin:7px 0 0;color:#a15c00;font-size:9px;font-weight:700}.kumpul-cart-item-controls{min-width:130px;display:grid;justify-items:end;gap:10px}.kumpul-cart-price{color:var(--kt-accent);font-size:13px}.kumpul-cart-quantity{display:flex;align-items:center;border:1px solid var(--kt-border);border-radius:9px;overflow:hidden}.kumpul-cart-quantity button{width:30px;height:28px;border:0;background:var(--kt-bg);color:var(--kt-text);font:inherit;font-weight:700;cursor:pointer}.kumpul-cart-quantity button:disabled{opacity:.4;cursor:not-allowed}.kumpul-cart-quantity span{min-width:28px;text-align:center;font-size:10px}.kumpul-cart-remove{padding:0;border:0;background:none;color:#b91c1c;font:inherit;font-size:9px;font-weight:700;cursor:pointer}.kumpul-cart-summary{position:sticky;top:20px;padding:18px;border:1px solid var(--kt-border);border-radius:17px;background:var(--kt-surface)}.kumpul-cart-summary h2{margin:0 0 15px;font-size:15px}.kumpul-cart-summary-row,.kumpul-cart-summary-total{display:flex;justify-content:space-between;gap:12px}.kumpul-cart-summary-row{padding-bottom:13px;border-bottom:1px solid var(--kt-border);color:var(--kt-muted);font-size:10px}.kumpul-cart-summary-row strong{color:var(--kt-text)}.kumpul-cart-summary-total{padding:14px 0;align-items:baseline;color:var(--kt-muted);font-size:10px}.kumpul-cart-summary-total strong{color:var(--kt-accent);font-size:18px}.kumpul-cart-checkout{width:100%;min-height:42px;border:0;border-radius:11px;background:var(--kt-accent);color:#fff;font:inherit;font-size:11px;font-weight:800;opacity:.56;cursor:not-allowed}.kumpul-cart-summary>p{margin:11px 0 0;color:var(--kt-muted);font-size:9px;line-height:1.5}.kumpul-cart-empty{margin:8px 0 0;padding:20px;border:1px dashed var(--kt-border);border-radius:13px;color:var(--kt-muted);font-size:11px;text-align:center}.kumpul-cart-empty-state{max-width:600px;margin:20px auto;padding:50px 20px;text-align:center;border:1px solid var(--kt-border);border-radius:22px;background:var(--kt-surface)}.kumpul-cart-empty-icon{width:58px;height:58px;margin:auto;display:grid;place-items:center;border-radius:50%;background:var(--kt-bg);font-size:27px}.kumpul-cart-empty-state h1{margin:15px 0 0;font-size:25px}.kumpul-cart-empty-state p{margin:8px 0 0;color:var(--kt-muted);font-size:12px}.kumpul-cart-browse{margin-top:18px;padding:11px 17px;display:inline-flex;border-radius:11px;background:var(--kt-accent);color:#fff;font-size:10px;font-weight:800}
+    .kumpul-cart{max-width:1080px;margin:0 auto}.kumpul-cart-heading h1{margin:0;font-size:clamp(30px,4vw,40px);line-height:1.15;letter-spacing:-.04em}.kumpul-cart-heading h1 span{margin-left:9px;color:var(--kt-muted);font-size:14px;font-weight:500;letter-spacing:0}.kumpul-cart-heading>div>p:last-child{margin:8px 0 0;color:var(--kt-muted);font-size:12px}.kumpul-cart-preview-note{margin:18px 0 0;padding:10px 13px;border:1px solid var(--kt-border);border-radius:12px;background:var(--kt-surface);color:var(--kt-muted);font-size:10px}.kumpul-cart-layout{margin-top:22px;display:grid;grid-template-columns:minmax(0,1fr) 300px;align-items:start;gap:22px}.kumpul-cart-select-all{margin-bottom:10px}.kumpul-cart-select-all button{padding:8px 0;border:0;background:none;color:var(--kt-muted);font:inherit;font-size:10px;font-weight:750;cursor:pointer}.kumpul-cart-list{display:grid;gap:11px}.kumpul-cart-item{padding:15px;display:grid;grid-template-columns:24px 70px minmax(0,1fr) auto;align-items:start;gap:13px;border:1px solid var(--kt-border);border-radius:16px;background:var(--kt-surface)}.kumpul-cart-choice{padding-top:4px;display:flex;justify-content:center}.kumpul-cart-choice input{width:17px;height:17px;accent-color:var(--kt-accent)}.kumpul-cart-choice input:disabled{opacity:.4}.kumpul-cart-art{width:70px;height:70px;display:grid;place-items:center;border:1px solid var(--kt-border);border-radius:14px;background:var(--kt-bg);color:var(--kt-accent);font-size:29px}.kumpul-cart-copy{min-width:0}.kumpul-cart-kind{color:var(--kt-accent);font-size:8px;font-weight:800;letter-spacing:.1em;text-transform:uppercase}.kumpul-cart-copy h2{margin:4px 0 0;font-size:13px}.kumpul-cart-detail,.kumpul-cart-variant{margin:5px 0 0;color:var(--kt-muted);font-size:10px}.kumpul-cart-blocked{margin:7px 0 0;color:#a15c00;font-size:9px;font-weight:700}.kumpul-cart-name-link{color:inherit;text-decoration:none}.kumpul-cart-name-link:hover{color:var(--kt-accent)}.kumpul-cart-detail-link{margin-top:9px;width:fit-content;min-height:34px;padding:7px 12px;display:inline-flex;align-items:center;border:1px solid var(--kt-border);border-radius:999px;color:var(--kt-text);font-size:11px;font-weight:700;text-decoration:none}.kumpul-cart-detail-link.is-primary{border-color:var(--kt-accent);background:var(--kt-accent);color:#fff}.kumpul-cart-item-controls{min-width:130px;display:grid;justify-items:end;gap:10px}.kumpul-cart-price{color:var(--kt-accent);font-size:13px}.kumpul-cart-quantity{display:flex;align-items:center;border:1px solid var(--kt-border);border-radius:9px;overflow:hidden}.kumpul-cart-quantity button{width:30px;height:28px;border:0;background:var(--kt-bg);color:var(--kt-text);font:inherit;font-weight:700;cursor:pointer}.kumpul-cart-quantity button:disabled{opacity:.4;cursor:not-allowed}.kumpul-cart-quantity span{min-width:28px;text-align:center;font-size:10px}.kumpul-cart-remove{padding:0;border:0;background:none;color:#b91c1c;font:inherit;font-size:9px;font-weight:700;cursor:pointer}.kumpul-cart-summary{position:sticky;top:20px;padding:18px;border:1px solid var(--kt-border);border-radius:17px;background:var(--kt-surface)}.kumpul-cart-summary h2{margin:0 0 15px;font-size:15px}.kumpul-cart-summary-row,.kumpul-cart-summary-total{display:flex;justify-content:space-between;gap:12px}.kumpul-cart-summary-row{padding-bottom:13px;border-bottom:1px solid var(--kt-border);color:var(--kt-muted);font-size:10px}.kumpul-cart-summary-row strong{color:var(--kt-text)}.kumpul-cart-summary-total{padding:14px 0;align-items:baseline;color:var(--kt-muted);font-size:10px}.kumpul-cart-summary-total strong{color:var(--kt-accent);font-size:18px}.kumpul-cart-checkout{width:100%;min-height:42px;border:0;border-radius:11px;background:var(--kt-accent);color:#fff;font:inherit;font-size:11px;font-weight:800;opacity:.56;cursor:not-allowed}.kumpul-cart-summary>p{margin:11px 0 0;color:var(--kt-muted);font-size:9px;line-height:1.5}.kumpul-cart-empty{margin:8px 0 0;padding:20px;border:1px dashed var(--kt-border);border-radius:13px;color:var(--kt-muted);font-size:11px;text-align:center}.kumpul-cart-empty-state{max-width:600px;margin:20px auto;padding:50px 20px;text-align:center;border:1px solid var(--kt-border);border-radius:22px;background:var(--kt-surface)}.kumpul-cart-empty-icon{width:58px;height:58px;margin:auto;display:grid;place-items:center;border-radius:50%;background:var(--kt-bg);font-size:27px}.kumpul-cart-empty-state h1{margin:15px 0 0;font-size:25px}.kumpul-cart-empty-state p{margin:8px 0 0;color:var(--kt-muted);font-size:12px}.kumpul-cart-browse{margin-top:18px;padding:11px 17px;display:inline-flex;border-radius:11px;background:var(--kt-accent);color:#fff;font-size:10px;font-weight:800}
     .kumpul-cart.is-empty .kumpul-cart-select-all,.kumpul-cart.is-empty .kumpul-cart-summary{display:none}.kumpul-cart.is-empty .kumpul-cart-layout{grid-template-columns:1fr}
     @media(max-width:760px){.kumpul-cart-layout{grid-template-columns:1fr;gap:15px}.kumpul-cart-item{grid-template-columns:20px 52px minmax(0,1fr);gap:10px;padding:12px}.kumpul-cart-art{width:52px;height:52px;border-radius:12px;font-size:23px}.kumpul-cart-copy h2{font-size:11px}.kumpul-cart-item-controls{grid-column:3;min-width:0;width:100%;display:flex;align-items:center;justify-content:space-between;gap:8px}.kumpul-cart-price{margin-right:auto;font-size:12px}.kumpul-cart-summary{position:static}.kumpul-cart-heading h1{font-size:32px}}
     .kumpul-transactions{max-width:980px;margin:0 auto}.kumpul-transactions-heading{display:flex;align-items:flex-end;justify-content:space-between;gap:24px}.kumpul-transactions-heading h1{margin:0;color:var(--kt-text);font-size:clamp(30px,4vw,42px);line-height:1.15;letter-spacing:-.04em}.kumpul-transactions-heading>div:first-child>p:last-child{margin:9px 0 0;color:var(--kt-muted);font-size:13px}.kumpul-transactions-total{padding:13px 16px;display:grid;gap:2px;border:1px solid var(--kt-border);border-radius:15px;background:var(--kt-surface)}.kumpul-transactions-total strong{font-size:21px;line-height:1.1}.kumpul-transactions-total span{color:var(--kt-muted);font-size:10px}.kumpul-transactions-preview-note{margin:20px 0 0;padding:11px 14px;border:1px solid var(--kt-border);border-radius:12px;background:var(--kt-surface);color:var(--kt-muted);font-size:11px}.kumpul-transactions-filters{margin:25px 0 22px;padding-bottom:7px;display:flex;gap:8px;overflow-x:auto;border-bottom:1px solid var(--kt-border);scrollbar-width:thin}.kumpul-transactions-filters button{padding:9px 12px;display:inline-flex;align-items:center;gap:8px;border:1px solid transparent;border-radius:11px 11px 0 0;background:transparent;color:var(--kt-muted);font:inherit;font-size:11px;font-weight:700;white-space:nowrap;cursor:pointer}.kumpul-transactions-filters button[aria-pressed=true]{border-color:var(--kt-border);border-bottom-color:var(--kt-surface);background:var(--kt-surface);color:var(--kt-accent)}.kumpul-transactions-filters button span{min-width:20px;height:20px;padding:2px 6px;display:grid;place-items:center;border-radius:99px;background:var(--kt-bg);color:var(--kt-muted);font-size:9px}.kumpul-transactions-list{display:grid;gap:12px}.kumpul-transaction-card{overflow:hidden;border:1px solid var(--kt-border);border-radius:16px;background:var(--kt-surface)}.kumpul-transaction-top{padding:13px 18px;display:flex;align-items:center;justify-content:space-between;gap:12px;border-bottom:1px solid #e8f0f2}.kumpul-transaction-top>div{display:flex;align-items:center;gap:8px;color:var(--kt-muted);font-size:10px}.kumpul-transaction-ref{color:var(--kt-text);font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-weight:750}.kumpul-transaction-status{padding:6px 9px;flex:none;border-radius:99px;font-size:9px;font-weight:800}.kumpul-transaction-status-warning{background:#fff4da;color:#a15c00}.kumpul-transaction-status-info{background:#e8f2ff;color:#2563eb}.kumpul-transaction-status-success{background:#e5f7ef;color:#08734f}.kumpul-transaction-status-danger{background:#ffeded;color:#b91c1c}.kumpul-transaction-status-muted{background:#eef1f4;color:#64748b}.kumpul-transaction-body{padding:16px 18px;display:flex;align-items:center;justify-content:space-between;gap:20px}.kumpul-transaction-item{min-width:0;display:flex;align-items:center;gap:13px}.kumpul-transaction-art{width:58px;height:58px;flex:none;display:grid;place-items:center;border:1px solid var(--kt-border);border-radius:14px;background:var(--kt-bg);color:var(--kt-accent);font-size:26px}.kumpul-transaction-item>div{min-width:0}.kumpul-transaction-item h2{margin:0;font-size:13px}.kumpul-transaction-item p{margin:5px 0 0;color:var(--kt-muted);font-size:10px}.kumpul-transaction-total{flex:none;text-align:right}.kumpul-transaction-total span{display:block;color:var(--kt-muted);font-size:10px}.kumpul-transaction-total strong{display:block;margin-top:3px;font-size:16px}.kumpul-transaction-actions{padding:0 18px 15px;display:flex;justify-content:flex-end;gap:8px}.kumpul-transaction-actions button{min-height:34px;padding:7px 11px;border:1px solid var(--kt-border);border-radius:10px;background:var(--kt-surface);color:var(--kt-text);font:inherit;font-size:9px;font-weight:750;opacity:.62;cursor:not-allowed}.kumpul-transaction-actions button:disabled{opacity:.62}.kumpul-transactions-empty{margin:0;padding:32px 18px;border:1px dashed var(--kt-border);border-radius:15px;color:var(--kt-muted);font-size:12px;text-align:center}
@@ -4206,7 +4339,7 @@ function styles(colors) {
     @media(max-width:700px){.kumpul-billing-heading{align-items:flex-start;flex-direction:column;gap:16px}.kumpul-billing-summary{width:100%}.kumpul-billing-summary-card{min-width:0;flex:1;padding:11px 13px}.kumpul-billing-summary-card strong{font-size:18px}.kumpul-billing-filters{margin-top:20px}.kumpul-billing-card-top{padding:15px;gap:10px}.kumpul-billing-card h3{font-size:13px}.kumpul-billing-status{max-width:120px;white-space:normal;text-align:center}.kumpul-billing-card-bottom{padding:13px 15px}.kumpul-billing-card-bottom strong{font-size:15px}}
     .kumpul-calendar-agenda:not([open]){display:none}.kumpul-calendar-agenda[open]{position:fixed;inset:50% auto auto 50%;z-index:10;width:min(560px,calc(100vw - 32px));max-height:calc(100dvh - 48px);margin:0;padding:0;display:flex;flex-direction:column;transform:translate(-50%,-50%);overflow:hidden;border:1px solid var(--kt-border);border-radius:22px;background:var(--kt-bg);color:var(--kt-text);box-shadow:0 24px 80px #0f172a45}.kumpul-calendar-agenda::backdrop{background:rgb(15 23 42 / 45%);backdrop-filter:blur(2px)}.kumpul-calendar-agenda-handle{display:none}.kumpul-calendar-agenda-heading{padding:22px 24px 16px;display:flex;align-items:flex-start;justify-content:space-between;gap:16px;border-bottom:1px solid var(--kt-border)}.kumpul-calendar-agenda-heading .kumpul-eyebrow{margin:0 0 4px}.kumpul-calendar-agenda-heading h2{margin:0;font-size:20px;text-transform:capitalize}.kumpul-calendar-agenda-close{width:36px;height:36px;flex:none;border:1px solid var(--kt-border);border-radius:50%;background:var(--kt-surface);color:var(--kt-text);font:inherit;font-size:22px;line-height:1;cursor:pointer}.kumpul-calendar-agenda-content{min-height:0;padding:18px 24px 24px;overflow:auto;overscroll-behavior:contain}.kumpul-calendar-agenda-list{display:grid;gap:10px}.kumpul-calendar-empty{margin:0;padding:18px;border:1px dashed var(--kt-border);border-radius:14px;color:var(--kt-muted);font-size:13px;text-align:center}
     @media(max-width:620px){.kumpul-calendar-agenda[open]{inset:auto 0 0;width:100%;max-width:none;max-height:min(84dvh,720px);padding-bottom:env(safe-area-inset-bottom);transform:none;border-right:0;border-bottom:0;border-left:0;border-radius:22px 22px 0 0}.kumpul-calendar-agenda-handle{width:38px;height:4px;margin:10px auto 0;display:block;border-radius:99px;background:#cbd5e1}.kumpul-calendar-agenda-heading{padding:14px 20px 14px}.kumpul-calendar-agenda-content{padding:16px 20px 22px}.kumpul-calendar-agenda-close{width:34px;height:34px}}
-    .kumpul-calendar-month-toolbar{margin:22px 0 14px;padding:17px 19px;display:flex;align-items:center;justify-content:space-between;gap:16px;border:1px solid var(--kt-border);border-radius:17px;background:var(--kt-surface)}.kumpul-calendar-month-title h2{margin:0;font-size:20px;line-height:1.2;text-transform:capitalize}.kumpul-calendar-month-title p{margin:5px 0 0;color:var(--kt-muted);font-size:11px}.kumpul-calendar-month-actions{display:flex;align-items:center;gap:7px}.kumpul-calendar-month-actions button{min-width:38px;height:38px;padding:7px 11px;border:1px solid var(--kt-border);border-radius:11px;background:var(--kt-surface);color:var(--kt-text);font:inherit;font-size:12px;font-weight:700;cursor:pointer}.kumpul-calendar-month-actions button[data-calendar-previous],.kumpul-calendar-month-actions button[data-calendar-next]{font-size:22px;line-height:1}.kumpul-calendar-month-view{overflow:hidden;border:1px solid var(--kt-border);border-radius:17px;background:var(--kt-surface)}.kumpul-calendar-weekdays,.kumpul-calendar-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr))}.kumpul-calendar-weekdays{border-bottom:1px solid var(--kt-border);background:#f8fbfc}.kumpul-calendar-weekdays span{padding:10px 6px;color:var(--kt-muted);font-size:10px;font-weight:750;text-align:center}.kumpul-calendar-day{position:relative;min-width:0;min-height:77px;padding:9px;display:flex;align-items:flex-start;justify-content:space-between;gap:4px;border:0;border-right:1px solid #e8f0f2;border-bottom:1px solid #e8f0f2;background:var(--kt-surface);color:var(--kt-text);font:inherit;text-align:left;cursor:pointer}.kumpul-calendar-day:nth-child(7n){border-right:0}.kumpul-calendar-day:nth-last-child(-n+7){border-bottom:0}.kumpul-calendar-day:hover{background:#f4fafb}.kumpul-calendar-day[aria-pressed=true]{background:#e6f4f6;box-shadow:inset 0 0 0 2px var(--kt-accent)}.kumpul-calendar-day[data-outside-month=true]{color:#a7b3bd;background:#fbfcfd}.kumpul-calendar-day>span{font-size:11px;font-weight:700}.kumpul-calendar-day small{min-width:19px;height:19px;padding:2px 5px;display:grid;place-items:center;border-radius:999px;background:var(--kt-accent);color:#fff;font-size:9px;font-weight:800}.kumpul-calendar-day:focus-visible,.kumpul-calendar-month-actions button:focus-visible{position:relative;z-index:1;outline:3px solid var(--kt-success);outline-offset:-3px}.kumpul-calendar-agenda{margin-top:24px}.kumpul-calendar-agenda>h3{margin:0 0 12px;font-size:16px;text-transform:capitalize}.kumpul-calendar-event{padding:14px 16px;display:grid;grid-template-columns:76px 1fr;align-items:start;gap:14px;border:1px solid var(--kt-border);border-left:4px solid var(--kt-accent);border-radius:14px;background:var(--kt-surface)}.kumpul-calendar-event[hidden]{display:none}.kumpul-calendar-event-linked{position:relative;transition:border-color .15s,box-shadow .15s}.kumpul-calendar-event-linked:hover,.kumpul-calendar-event-linked:focus-within{border-color:var(--kt-accent);box-shadow:0 8px 22px rgba(15,23,42,.06)}.kumpul-calendar-event-link{color:inherit;text-decoration:none;outline:none}.kumpul-calendar-event-link::after{content:'';position:absolute;inset:0;border-radius:inherit}.kumpul-calendar-event-invitation{border-left-color:var(--kt-success)}.kumpul-calendar-event-time{padding-top:2px;color:var(--kt-accent);font-size:11px;font-weight:800}.kumpul-calendar-event-copy{min-width:0}.kumpul-calendar-event-kind{color:var(--kt-muted);font-size:9px;font-weight:800;letter-spacing:.08em;text-transform:uppercase}.kumpul-calendar-event-copy h4{margin:3px 0 0;font-size:13px}.kumpul-calendar-event-copy p{margin:4px 0 0;color:var(--kt-muted);font-size:10px}
+    .kumpul-calendar-month-toolbar{margin:22px 0 14px;padding:17px 19px;display:flex;align-items:center;justify-content:space-between;gap:16px;border:1px solid var(--kt-border);border-radius:17px;background:var(--kt-surface)}.kumpul-calendar-month-title h2{margin:0;font-size:20px;line-height:1.2;text-transform:capitalize}.kumpul-calendar-month-title p{margin:5px 0 0;color:var(--kt-muted);font-size:11px}.kumpul-calendar-month-actions{display:flex;align-items:center;gap:7px}.kumpul-calendar-month-actions button{min-width:38px;height:38px;padding:7px 11px;border:1px solid var(--kt-border);border-radius:11px;background:var(--kt-surface);color:var(--kt-text);font:inherit;font-size:12px;font-weight:700;cursor:pointer}.kumpul-calendar-month-actions button[data-calendar-previous],.kumpul-calendar-month-actions button[data-calendar-next]{font-size:22px;line-height:1}.kumpul-calendar-month-view{overflow:hidden;border:1px solid var(--kt-border);border-radius:17px;background:var(--kt-surface)}.kumpul-calendar-weekdays,.kumpul-calendar-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr))}.kumpul-calendar-weekdays{border-bottom:1px solid var(--kt-border);background:#f8fbfc}.kumpul-calendar-weekdays span{padding:10px 6px;color:var(--kt-muted);font-size:10px;font-weight:750;text-align:center}.kumpul-calendar-day{position:relative;min-width:0;min-height:77px;padding:9px;display:flex;align-items:flex-start;justify-content:space-between;gap:4px;border:0;border-right:1px solid #e8f0f2;border-bottom:1px solid #e8f0f2;background:var(--kt-surface);color:var(--kt-text);font:inherit;text-align:left;cursor:pointer}.kumpul-calendar-day:nth-child(7n){border-right:0}.kumpul-calendar-day:nth-last-child(-n+7){border-bottom:0}.kumpul-calendar-day:hover{background:#f4fafb}.kumpul-calendar-day[aria-pressed=true]{background:#e6f4f6;box-shadow:inset 0 0 0 2px var(--kt-accent)}.kumpul-calendar-day[data-outside-month=true]{color:#a7b3bd;background:#fbfcfd}.kumpul-calendar-day>span{font-size:11px;font-weight:700}.kumpul-calendar-day small{min-width:19px;height:19px;padding:2px 5px;display:grid;place-items:center;border-radius:999px;background:var(--kt-accent);color:#fff;font-size:9px;font-weight:800}.kumpul-calendar-day:focus-visible,.kumpul-calendar-month-actions button:focus-visible{position:relative;z-index:1;outline:3px solid var(--kt-success);outline-offset:-3px}.kumpul-calendar-agenda{margin-top:24px}.kumpul-calendar-agenda>h3{margin:0 0 12px;font-size:16px;text-transform:capitalize}.kumpul-calendar-event{padding:14px 16px;display:grid;grid-template-columns:76px 1fr;align-items:start;gap:14px;border:1px solid var(--kt-border);border-left:4px solid var(--kt-accent);border-radius:14px;background:var(--kt-surface)}.kumpul-calendar-event[hidden]{display:none}.kumpul-calendar-event-linked{position:relative;transition:border-color .15s,box-shadow .15s}.kumpul-calendar-event-linked:hover,.kumpul-calendar-event-linked:focus-within{border-color:var(--kt-accent);box-shadow:0 8px 22px rgba(15,23,42,.06)}.kumpul-calendar-event-link{color:inherit;text-decoration:none;outline:none}.kumpul-calendar-event-link::after{content:'';position:absolute;inset:0;border-radius:inherit}.kumpul-calendar-event-invitation{border-left-color:var(--kt-success)}.kumpul-calendar-event-service{border-left-color:#b7791f}.kumpul-calendar-service-card{justify-content:flex-start}.kumpul-calendar-service-card .kumpul-calendar-card-copy{flex:1}.kumpul-calendar-service-image{flex:none;width:52px;height:52px;border-radius:13px;object-fit:cover;background:#e6f4f6}.kumpul-calendar-service-image.is-empty{display:grid;place-items:center;color:var(--kt-accent)}.kumpul-calendar-service-card[data-calendar-service-status=payment] .kumpul-calendar-status{border-color:#f3d9a4;background:#fff8e8;color:#8a5a00}.kumpul-calendar-service-card[data-calendar-service-status=confirmed] .kumpul-calendar-status{border-color:#bfe6d4;background:#e5f7ef;color:#08734f}.kumpul-calendar-service-card[data-calendar-service-status=payment] .kumpul-calendar-action,.kumpul-calendar-service-card[data-calendar-service-status=planning] .kumpul-calendar-action{border-color:var(--kt-accent);background:var(--kt-accent);color:#fff}.kumpul-calendar-event-time{padding-top:2px;color:var(--kt-accent);font-size:11px;font-weight:800}.kumpul-calendar-event-copy{min-width:0}.kumpul-calendar-event-kind{color:var(--kt-muted);font-size:9px;font-weight:800;letter-spacing:.08em;text-transform:uppercase}.kumpul-calendar-event-copy h4{margin:3px 0 0;font-size:13px}.kumpul-calendar-event-copy p{margin:4px 0 0;color:var(--kt-muted);font-size:10px}
     @media(max-width:620px){.kumpul-calendar-month-toolbar{padding:13px;align-items:flex-start}.kumpul-calendar-month-title h2{font-size:17px}.kumpul-calendar-month-title p{max-width:170px;font-size:9px}.kumpul-calendar-month-actions{gap:4px}.kumpul-calendar-month-actions button{min-width:33px;height:34px;padding:5px 8px;font-size:10px}.kumpul-calendar-weekdays span{padding:8px 2px;font-size:9px}.kumpul-calendar-day{min-height:55px;padding:6px 5px}.kumpul-calendar-day>span{font-size:10px}.kumpul-calendar-day small{min-width:16px;height:16px;padding:1px 4px;font-size:8px}.kumpul-calendar-event{grid-template-columns:52px 1fr;gap:9px;padding:12px}.kumpul-calendar-event-time{font-size:10px}}
     @media(max-width:620px){.kumpul-calendar-tabs{overflow-x:auto}.kumpul-calendar-tabs button{flex:none;white-space:nowrap}}
     .kumpul-template{--kt-bg:${colors.background};--kt-surface:${colors.surface};--kt-text:${colors.text};--kt-muted:${colors.textMuted};--kt-accent:${colors.accent};--kt-hover:${colors.accentHover};--kt-border:${colors.border};--kt-success:${colors.success};--kt-warning:${colors.warning};min-height:100vh;background:var(--kt-bg);color:var(--kt-text);font:400 15px/1.55 Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}

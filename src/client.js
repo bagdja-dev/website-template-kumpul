@@ -717,9 +717,10 @@ import QRCode from 'qrcode';
     if (tabs.length === 0 || panels.length === 0) return;
 
     const descriptions = {
-      calendar: 'Lihat jadwal gathering, rencana, dan undangan Anda dalam satu kalender.',
+      calendar: 'Lihat jadwal gathering, rencana, undangan, dan jasa Anda dalam satu kalender.',
       plans: 'Kelola rencana, peserta, voting, dan pembayaran seat acara yang Anda buat.',
       invitations: 'Acara yang mengundang Anda. Buka undangan untuk menjawab RSVP, membayar seat, dan melihat tiket masuk.',
+      services: 'Pantau pesanan jasa Anda dari perencanaan, pembayaran, hingga selesai.',
     };
 
     const monthNames = new Intl.DateTimeFormat('id-ID', { month: 'long', year: 'numeric', timeZone: 'UTC' });
@@ -852,6 +853,23 @@ import QRCode from 'qrcode';
           card.hidden = !matches.includes(card);
         });
         if (filterEmpty) filterEmpty.hidden = matches.length > 0;
+      });
+    });
+
+    // Filter tahap jasa (tab Jadwal Jasa) — terpisah dari filter rencana.
+    const serviceFilters = Array.from(calendar.querySelectorAll('[data-service-filter]'));
+    const serviceCards = Array.from(calendar.querySelectorAll('[data-service-card]'));
+    const serviceFilterEmpty = calendar.querySelector('[data-service-filter-empty]');
+    serviceFilters.forEach((filter) => {
+      filter.addEventListener('click', () => {
+        serviceFilters.forEach((item) => item.setAttribute('aria-pressed', String(item === filter)));
+        const status = filter.dataset.serviceFilter;
+        let visible = 0;
+        serviceCards.forEach((card) => {
+          card.hidden = !(status === 'all' || card.dataset.calendarServiceStatus === status);
+          if (!card.hidden) visible += 1;
+        });
+        if (serviceFilterEmpty) serviceFilterEmpty.hidden = visible > 0;
       });
     });
   }));
