@@ -279,6 +279,26 @@ test('renders transaction detail from props.page with retry payment behind the b
   assert.doesNotMatch(output, /ESC-KMP-018/);
 });
 
+test('transaction detail (paid) links each item to its progress and offers complete & dispute via the Kumpul modal', () => {
+  const props = fixture('detail-transaksi');
+  props.bridgeVersion = 1;
+  props.page.transaction.status = 'HELD';
+  props.page.transaction.paymentMode = 'ESCROW';
+  props.page.transaction.items[0].detailHref = '/kumpul-demo/order/k_tx?view=progress';
+  props.page.actions = ['order.dispute', 'order.complete'];
+  const output = html(props);
+  assert.match(output, /href="\/kumpul-demo\/order\/k_tx\?view=progress">Lihat detail &amp; progres pesanan/);
+  assert.match(output, /data-bagdja-action="order.complete"[^>]*data-kumpul-confirm="Pesanan sudah selesai\?"[^>]*>Pesanan selesai · lepaskan dana</);
+  assert.match(output, /data-bagdja-action="order.dispute"[^>]*data-kumpul-confirm-tone="danger"[^>]*>Ajukan komplain</);
+
+  // Langkah pesanan belum selesai → belum bisa lepas dana; arahkan ke progres.
+  props.page.actions = ['order.dispute'];
+  const pending = html(props);
+  assert.doesNotMatch(pending, /data-bagdja-action="order.complete"/);
+  assert.match(pending, /setelah semua langkah pesanan selesai/);
+  assert.match(pending, /class="kumpul-detail-progress-link" href="\/kumpul-demo\/order\/k_tx\?view=progress"/);
+});
+
 test('still renders a legacy host order_detail section without props.page', () => {
   const props = withoutPage('detail-transaksi');
   props.sections = [{
