@@ -133,6 +133,13 @@
             "value": null
           },
           {
+            "name": "anggaran",
+            "label": "Anggaran per orang",
+            "type": "number",
+            "required": false,
+            "value": "1250000.5"
+          },
+          {
             "name": "armada",
             "label": "Jenis armada",
             "type": "select",
