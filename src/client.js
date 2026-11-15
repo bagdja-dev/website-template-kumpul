@@ -371,6 +371,69 @@ import QRCode from 'qrcode';
     }, { passive: true });
   }));
 
+  // Konfirmasi bergaya Kumpul untuk tombol ber-`data-kumpul-confirm` (aksi yang di host memakai
+  // window.confirm). Klik pertama ditahan (fase capture, sebelum bridge Bagdja), modal ditampilkan;
+  // bila disetujui, klik diteruskan sekali dengan `data-bagdja-confirmed="true"` → host tidak lagi
+  // menampilkan dialog bawaan browser.
+  let confirmDialog = null;
+  const openConfirmDialog = (trigger) => {
+    if (!confirmDialog) {
+      confirmDialog = document.createElement('dialog');
+      confirmDialog.className = 'kumpul-confirm-dialog';
+      confirmDialog.setAttribute('aria-labelledby', 'kumpul-confirm-title');
+      confirmDialog.setAttribute('aria-describedby', 'kumpul-confirm-text');
+      confirmDialog.innerHTML = '<span class="kumpul-confirm-icon" aria-hidden="true" data-confirm-icon></span>'
+        + '<h4 id="kumpul-confirm-title" data-confirm-title></h4>'
+        + '<p id="kumpul-confirm-text" data-confirm-text></p>'
+        + '<div class="kumpul-confirm-actions"><button type="button" data-confirm-cancel>Kembali</button>'
+        + '<button type="button" class="kumpul-confirm-submit" data-confirm-submit></button></div>';
+      // Di dalam .kumpul-template agar variabel tema (--kt-*) berlaku.
+      (document.querySelector('.kumpul-template') || document.body).append(confirmDialog);
+      confirmDialog.addEventListener('click', (event) => {
+        const target = event.target instanceof Element ? event.target : null;
+        if (target === confirmDialog || target?.closest('[data-confirm-cancel]')) {
+          confirmDialog.pendingTrigger = null;
+          confirmDialog.close();
+          return;
+        }
+        if (target?.closest('[data-confirm-submit]')) {
+          const pending = confirmDialog.pendingTrigger;
+          confirmDialog.pendingTrigger = null;
+          confirmDialog.close();
+          if (!pending || !pending.isConnected || pending.disabled) return;
+          pending.setAttribute('data-bagdja-confirmed', 'true');
+          pending.dataset.kumpulConfirmPassed = 'true';
+          try {
+            pending.click();
+          } finally {
+            pending.removeAttribute('data-bagdja-confirmed');
+            delete pending.dataset.kumpulConfirmPassed;
+          }
+        }
+      });
+    }
+    const danger = trigger.getAttribute('data-kumpul-confirm-tone') === 'danger';
+    confirmDialog.classList.toggle('is-danger', danger);
+    confirmDialog.querySelector('[data-confirm-icon]').textContent = danger ? '!' : '?';
+    confirmDialog.querySelector('[data-confirm-title]').textContent = trigger.getAttribute('data-kumpul-confirm') || 'Lanjutkan?';
+    const description = trigger.getAttribute('data-kumpul-confirm-text') || '';
+    const textNode = confirmDialog.querySelector('[data-confirm-text]');
+    textNode.textContent = description;
+    textNode.hidden = !description;
+    confirmDialog.querySelector('[data-confirm-submit]').textContent = trigger.getAttribute('data-kumpul-confirm-label') || 'Ya, lanjutkan';
+    confirmDialog.pendingTrigger = trigger;
+    if (!confirmDialog.open) confirmDialog.showModal();
+    confirmDialog.querySelector('[data-confirm-submit]').focus();
+  };
+  document.addEventListener('click', (event) => {
+    const trigger = event.target instanceof Element ? event.target.closest('[data-kumpul-confirm]') : null;
+    if (!trigger || trigger.disabled || trigger.getAttribute('aria-busy') === 'true') return;
+    if (trigger.dataset.kumpulConfirmPassed === 'true') return; // klik lanjutan setelah disetujui
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    openConfirmDialog(trigger);
+  }, true);
+
   // Image viewer fullscreen: <dialog> modal sendiri agar tampil di atas popup opsi (top layer).
   let imageViewer = null;
   // `captions` (opsional) sejajar dengan `urls`: keterangan foto tampil di bawah viewer.
