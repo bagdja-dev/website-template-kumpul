@@ -329,7 +329,8 @@ import QRCode from 'qrcode';
 
   // Image viewer fullscreen: <dialog> modal sendiri agar tampil di atas popup opsi (top layer).
   let imageViewer = null;
-  const openImageViewer = (urls, startIndex) => {
+  // `captions` (opsional) sejajar dengan `urls`: keterangan foto tampil di bawah viewer.
+  const openImageViewer = (urls, startIndex, captions = []) => {
     if (!urls.length) return;
     if (!imageViewer) {
       imageViewer = document.createElement('dialog');
@@ -339,14 +340,21 @@ import QRCode from 'qrcode';
         + '<button type="button" class="kumpul-image-viewer-close" data-viewer-close aria-label="Tutup pratinjau">×</button>'
         + '<button type="button" class="kumpul-image-viewer-nav is-prev" data-viewer-prev aria-label="Gambar sebelumnya">‹</button>'
         + '<button type="button" class="kumpul-image-viewer-nav is-next" data-viewer-next aria-label="Gambar berikutnya">›</button>'
+        + '<p class="kumpul-image-viewer-caption" data-viewer-caption hidden></p>'
         + '<span class="kumpul-image-viewer-count" data-viewer-count></span>';
       (document.querySelector('.kumpul-template') || document.body).append(imageViewer);
-      const state = { urls: [], index: 0, touchX: null };
+      const state = { urls: [], captions: [], index: 0, touchX: null };
       imageViewer.kumpulState = state;
       const show = (index) => {
         state.index = (index + state.urls.length) % state.urls.length;
         imageViewer.querySelector('[data-viewer-image]').src = state.urls[state.index];
         imageViewer.querySelector('[data-viewer-count]').textContent = `${state.index + 1} / ${state.urls.length}`;
+        const caption = String(state.captions[state.index] || '').trim();
+        const captionElement = imageViewer.querySelector('[data-viewer-caption]');
+        captionElement.textContent = caption;
+        captionElement.hidden = !caption;
+        imageViewer.classList.toggle('has-caption', Boolean(caption));
+        imageViewer.querySelector('[data-viewer-image]').alt = caption;
         const many = state.urls.length > 1;
         imageViewer.querySelector('[data-viewer-prev]').hidden = !many;
         imageViewer.querySelector('[data-viewer-next]').hidden = !many;
@@ -374,6 +382,7 @@ import QRCode from 'qrcode';
       });
     }
     imageViewer.kumpulState.urls = urls;
+    imageViewer.kumpulState.captions = captions;
     imageViewer.kumpulShow(startIndex);
     if (!imageViewer.open) imageViewer.showModal();
   };
@@ -387,6 +396,27 @@ import QRCode from 'qrcode';
       .map((image) => image.getAttribute('src'))
       .filter(Boolean);
     openImageViewer(urls, Number(slide.getAttribute('data-option-image-open')) || 0);
+  });
+
+  // Galeri foto (section Galeri): buka viewer layar penuh beserta keterangan tiap foto.
+  const openGalleryImage = (tile) => {
+    const tiles = Array.from(tile.closest('[data-gallery]')?.querySelectorAll('[data-gallery-image-open]') || [tile]);
+    openImageViewer(
+      tiles.map((item) => item.getAttribute('data-gallery-url') || ''),
+      Math.max(0, tiles.indexOf(tile)),
+      tiles.map((item) => item.getAttribute('data-gallery-caption') || ''),
+    );
+  };
+  document.addEventListener('click', (event) => {
+    const tile = event.target instanceof Element ? event.target.closest('[data-gallery-image-open]') : null;
+    if (tile) openGalleryImage(tile);
+  });
+  document.addEventListener('keydown', (event) => {
+    if (event.key !== 'Enter' && event.key !== ' ') return;
+    const tile = event.target instanceof Element ? event.target.closest('[data-gallery-image-open]') : null;
+    if (!tile) return;
+    event.preventDefault();
+    openGalleryImage(tile);
   });
 
   // Loading pada tombol yang terlihat bila intent dijalankan lewat tombol tersembunyi
@@ -1517,6 +1547,44 @@ import QRCode from 'qrcode';
     } catch {
       window.name = '';
     }
+  });
+
+  // Draft pesanan: koordinat dari perangkat untuk field lokasi.
+  document.addEventListener('click', (event) => {
+    const button = event.target instanceof Element ? event.target.closest('[data-kumpul-geolocate]') : null;
+    if (!button || button.disabled) return;
+    const input = document.getElementById(button.getAttribute('data-kumpul-geolocate'));
+    if (!input || !navigator.geolocation) {
+      button.textContent = 'Lokasi tidak tersedia';
+      return;
+    }
+    const label = button.textContent;
+    button.disabled = true;
+    button.textContent = 'Mencari lokasi…';
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        input.value = `${position.coords.latitude.toFixed(6)}, ${position.coords.longitude.toFixed(6)}`;
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+        button.disabled = false;
+        button.textContent = label;
+      },
+      () => {
+        button.disabled = false;
+        button.textContent = 'Izin lokasi ditolak';
+      },
+      { enableHighAccuracy: true, timeout: 15000 },
+    );
+  });
+
+  // Draft pesanan: file langsung diunggah begitu dipilih (tombol "Unggah" tetap ada sebagai cadangan).
+  document.addEventListener('change', (event) => {
+    const input = event.target instanceof HTMLInputElement && event.target.matches('[data-kumpul-autoupload]') ? event.target : null;
+    if (!input || !input.files || !input.files.length) return;
+    const scope = input.closest('[data-bagdja-scope]') || document;
+    const name = input.getAttribute('data-kumpul-autoupload');
+    const button = Array.from(scope.querySelectorAll('[data-kumpul-upload-for]'))
+      .find((candidate) => candidate.getAttribute('data-kumpul-upload-for') === name);
+    if (button && !button.disabled) button.click();
   });
 
   const mountRoot = (root) => {

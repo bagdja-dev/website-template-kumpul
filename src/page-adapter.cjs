@@ -19,6 +19,7 @@ const PAGE_SLUGS = {
   gathering_plan: 'plan-detail',
   product_detail: 'product-detail',
   gathering_invitation: 'invitation',
+  draft_order: 'draft-order',
 };
 
 function list(value) {
@@ -399,6 +400,19 @@ function adaptPage(page) {
       };
     case 'product_detail':
       return { ...base, product: adaptProduct(page), related: list(page.related), loggedIn: page.loggedIn === true };
+    case 'draft_order':
+      // Draft pesanan: bentuk kontrak dipakai langsung (camelCase, sudah tersanitasi host).
+      return {
+        ...base,
+        draftOrder: {
+          order: page.order && typeof page.order === 'object' ? page.order : {},
+          steps: list(page.steps),
+          quote: page.quote && typeof page.quote === 'object' ? page.quote : null,
+          canPay: page.canPay === true,
+          canCancel: page.canCancel === true,
+          ordersHref: typeof page.ordersHref === 'string' ? page.ordersHref : '',
+        },
+      };
     default:
       return null;
   }

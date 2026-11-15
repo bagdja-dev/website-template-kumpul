@@ -2,7 +2,7 @@
   "manifestVersion": 1,
   "slug": "kumpul",
   "name": "Kumpul",
-  "version": "1.4.2",
+  "version": "1.5.0",
   "rendererApiVersion": 1,
   "businessProfiles": [
     "gathering"
@@ -41,7 +41,8 @@
     "calendar",
     "gathering_plan",
     "product_detail",
-    "gathering_invitation"
+    "gathering_invitation",
+    "draft_order"
   ],
   "entry": {
     "server": "dist/server.cjs",
