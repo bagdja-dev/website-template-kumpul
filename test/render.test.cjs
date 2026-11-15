@@ -140,7 +140,7 @@ test('renders the calendar page from props.page with local plan and invitation c
   assert.ok((output.match(/data-calendar-card=/g) || []).length >= 4);
 });
 
-test('calendar shows scheduled services on every day they span and in the services tab', () => {
+test('calendar shows services on every day they span and every stage (incl. undated) in the services tab', () => {
   const output = html(fixture('calendar'));
   assert.match(output, /data-calendar-tab="services"/);
   assert.match(output, /data-calendar-panel="services"/);
@@ -150,8 +150,14 @@ test('calendar shows scheduled services on every day they span and in the servic
   }
   assert.match(output, /09\.00–13\.00/);
   assert.match(output, /Sepanjang hari/);
-  assert.match(output, /href="\/kumpul-demo\/cart\/order\/k_service_ord_villa"[^>]*>Lanjutkan pesanan/);
-  assert.match(output, /data-calendar-service-status="scheduled"/);
+  assert.match(output, /href="\/kumpul-demo\/cart\/order\/k_service_ord_villa"[^>]*>Bayar pesanan/);
+  assert.match(output, /data-calendar-service-status="confirmed"/);
+  // Jasa belum bertanggal: tampil di tab Jadwal Jasa (bukan di grid kalender).
+  assert.match(output, /data-calendar-service-status="planning"[^]*?Katering Syukuran[^]*?Jadwal belum ditentukan[^]*?>Lengkapi pesanan</);
+  assert.equal((output.match(/data-calendar-event=""[^>]*>(?:(?!<\/article>)[^])*Katering Syukuran/g) || []).length, 0);
+  for (const filter of ['all', 'planning', 'payment', 'confirmed', 'completed']) {
+    assert.match(output, new RegExp(`data-service-filter="${filter}"`));
+  }
 });
 
 test('renders live calendar data on the seller website and only notes preview data in preview', () => {

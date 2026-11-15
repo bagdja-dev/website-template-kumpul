@@ -138,8 +138,8 @@
       {
         "key": "k_service_ord_photo",
         "title": "Foto Prewedding Outdoor",
-        "status": "scheduled",
-        "statusLabel": "Terjadwal",
+        "status": "confirmed",
+        "statusLabel": "Dikonfirmasi",
         "startAt": "2026-12-05T09:00:00+07:00",
         "endAt": "2026-12-05T13:00:00+07:00",
         "allDay": false,
@@ -149,13 +149,22 @@
       {
         "key": "k_service_ord_villa",
         "title": "Sewa Villa Puncak",
-        "status": "proposed",
-        "statusLabel": "Diusulkan",
+        "status": "payment",
+        "statusLabel": "Menunggu pembayaran",
         "startAt": "2026-12-24T00:00:00+07:00",
         "endAt": "2026-12-26T00:00:00+07:00",
         "allDay": true,
         "quantity": 2,
         "detailHref": "/kumpul-demo/cart/order/k_service_ord_villa"
+      },
+      {
+        "key": "k_service_ord_catering",
+        "title": "Katering Syukuran",
+        "status": "planning",
+        "statusLabel": "Perencanaan",
+        "allDay": false,
+        "quantity": 1,
+        "detailHref": "/kumpul-demo/cart/order/k_service_ord_catering"
       }
     ],
     "actions": [
