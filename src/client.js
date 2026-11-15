@@ -717,9 +717,10 @@ import QRCode from 'qrcode';
     if (tabs.length === 0 || panels.length === 0) return;
 
     const descriptions = {
-      calendar: 'Lihat jadwal gathering, rencana, dan undangan Anda dalam satu kalender.',
+      calendar: 'Lihat jadwal gathering, rencana, undangan, dan jasa Anda dalam satu kalender.',
       plans: 'Kelola rencana, peserta, voting, dan pembayaran seat acara yang Anda buat.',
       invitations: 'Acara yang mengundang Anda. Buka undangan untuk menjawab RSVP, membayar seat, dan melihat tiket masuk.',
+      services: 'Jadwal layanan dari jasa yang Anda pesan.',
     };
 
     const monthNames = new Intl.DateTimeFormat('id-ID', { month: 'long', year: 'numeric', timeZone: 'UTC' });

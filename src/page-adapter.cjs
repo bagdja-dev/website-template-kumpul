@@ -299,6 +299,19 @@ function adaptCalendar(page) {
       action_label: invitation.responseLabel,
       detail_href: invitation.detailHref,
     })),
+    services: list(page.services).map((service) => ({
+      id: service.key,
+      key: service.key,
+      title: service.title,
+      image_url: service.imageUrl,
+      status: service.status,
+      status_label: service.statusLabel,
+      start_at: service.startAt,
+      end_at: service.endAt,
+      all_day: service.allDay === true,
+      quantity: service.quantity,
+      detail_href: service.detailHref,
+    })),
   };
 }
 

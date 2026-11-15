@@ -140,6 +140,20 @@ test('renders the calendar page from props.page with local plan and invitation c
   assert.ok((output.match(/data-calendar-card=/g) || []).length >= 4);
 });
 
+test('calendar shows scheduled services on every day they span and in the services tab', () => {
+  const output = html(fixture('calendar'));
+  assert.match(output, /data-calendar-tab="services"/);
+  assert.match(output, /data-calendar-panel="services"/);
+  assert.match(output, /kumpul-calendar-event-service[^"]*"[^>]*data-calendar-date="2026-12-05"/);
+  for (const day of ['2026-12-24', '2026-12-25', '2026-12-26']) {
+    assert.match(output, new RegExp(`kumpul-calendar-event-service[^"]*"[^>]*data-calendar-date="${day}"`));
+  }
+  assert.match(output, /09\.00–13\.00/);
+  assert.match(output, /Sepanjang hari/);
+  assert.match(output, /href="\/kumpul-demo\/cart\/order\/k_service_ord_villa"[^>]*>Lanjutkan pesanan/);
+  assert.match(output, /data-calendar-service-status="scheduled"/);
+});
+
 test('renders live calendar data on the seller website and only notes preview data in preview', () => {
   const output = html(live('calendar'));
   assert.match(output, /Family Camp Lembang/);

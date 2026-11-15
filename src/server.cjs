@@ -3677,11 +3677,49 @@ function calendarMonthCells(monthKey, events, selectedDate) {
   });
 }
 
+/** Kunci tanggal (YYYY-MM-DD, jam lokal dari ISO ber-offset) yang dilalui jadwal jasa; maks. 62 hari. */
+function serviceDateKeys(service) {
+  const start = calendarDateKey(service.start_at);
+  if (!start) return [];
+  const end = calendarDateKey(service.end_at) || start;
+  const keys = [];
+  const cursor = new Date(`${start}T00:00:00Z`);
+  while (keys.length < 62) {
+    const key = cursor.toISOString().slice(0, 10);
+    keys.push(key);
+    if (key >= end) break;
+    cursor.setUTCDate(cursor.getUTCDate() + 1);
+  }
+  return keys;
+}
+
+function serviceTimeLabel(service) {
+  if (service.all_day) return 'Sepanjang hari';
+  const start = formatCalendarTime(service.start_at);
+  const sameDay = !service.end_at || calendarDateKey(service.end_at) === calendarDateKey(service.start_at);
+  const end = service.end_at && sameDay ? formatCalendarTime(service.end_at) : '';
+  return end ? `${start}–${end}` : start;
+}
+
+function serviceScheduleLabel(service) {
+  const start = formatCalendarDate(service.start_at, { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+  const endKey = calendarDateKey(service.end_at);
+  const multiDay = endKey && endKey !== calendarDateKey(service.start_at);
+  if (service.all_day) {
+    return multiDay ? `${start} – ${formatCalendarDate(service.end_at, { day: 'numeric', month: 'short', year: 'numeric' })}` : `${start} · sepanjang hari`;
+  }
+  if (multiDay) {
+    return `${start} ${formatCalendarTime(service.start_at)} – ${formatCalendarDate(service.end_at, { day: 'numeric', month: 'short' })} ${formatCalendarTime(service.end_at)} WIB`;
+  }
+  return `${start} · ${serviceTimeLabel(service)} WIB`;
+}
+
 function CalendarSection({ props, section }) {
   const content = section?.content || {};
   const isPreview = props.isPreview === true;
   const plans = list(content.plans);
   const invitations = list(content.invitations);
+  const services = list(content.services).filter((service) => calendarDateKey(service.start_at));
   const attentionCount = invitations.filter((invitation) => invitation.needs_action === true).length;
   const events = [
     ...plans.filter((plan) => calendarDateKey(plan.event_date)).map((plan) => ({
@@ -3704,6 +3742,18 @@ function CalendarSection({ props, section }) {
       location: text(invitation.event_location),
       href: invitation.detail_href,
     })),
+    // Jasa multi-hari tampil di setiap tanggal yang dilaluinya.
+    ...services.flatMap((service) => serviceDateKeys(service).map((dateKey, dayIndex) => ({
+      id: `${service.id}-${dateKey}`,
+      type: 'service',
+      typeLabel: 'Jasa',
+      title: text(service.title, 'Jasa'),
+      statusLabel: text(service.status_label, 'Terjadwal'),
+      event_date: dayIndex === 0 ? service.start_at : `${dateKey}T00:00:00+07:00`,
+      timeLabel: dayIndex === 0 ? serviceTimeLabel(service) : 'Lanjutan',
+      location: '',
+      href: service.detail_href,
+    }))),
   ].sort((left, right) => new Date(left.event_date).getTime() - new Date(right.event_date).getTime());
   const initialMonth = calendarMonthKey(content.month, events[0]?.event_date);
   const initialDate = events.find((event) => calendarDateKey(event.event_date).startsWith(`${initialMonth}-`));
@@ -3716,7 +3766,7 @@ function CalendarSection({ props, section }) {
         h('p', { className: 'kumpul-eyebrow' }, 'Acara Anda'),
         h('h1', { className: 'kumpul-calendar-title' }, text(content.title, 'Kalender Acara')),
         h('p', { className: 'kumpul-calendar-description', 'data-calendar-description': '' },
-          'Lihat jadwal gathering, rencana, dan undangan Anda dalam satu kalender.',
+          'Lihat jadwal gathering, rencana, undangan, dan jasa Anda dalam satu kalender.',
         ),
       ),
       h('div', { className: 'kumpul-calendar-stats', 'aria-label': 'Ringkasan kalender' },
@@ -3724,6 +3774,7 @@ function CalendarSection({ props, section }) {
           [plans.length, 'rencana'],
           [invitations.length, 'undangan'],
           [attentionCount, 'perlu tindakan'],
+          ...(services.length ? [[services.length, 'jadwal jasa']] : []),
         ].map(([value, label]) => h('div', { className: 'kumpul-calendar-stat', key: label },
           h('strong', null, String(value)),
           h('span', null, label),
@@ -3762,6 +3813,14 @@ function CalendarSection({ props, section }) {
       }, 'Undangan', h('span', null, String(invitations.length)),
         attentionCount ? h('b', { 'aria-label': `${attentionCount} perlu tindakan` }, String(attentionCount)) : null,
       ),
+      h('button', {
+        type: 'button',
+        role: 'tab',
+        id: 'calendar-tab-services',
+        'aria-controls': 'calendar-panel-services',
+        'aria-selected': 'false',
+        'data-calendar-tab': 'services',
+      }, 'Jadwal Jasa', h('span', null, String(services.length))),
     ),
     h('div', {
       id: 'calendar-panel-calendar',
@@ -3817,7 +3876,7 @@ function CalendarSection({ props, section }) {
             hidden: calendarDateKey(event.event_date) !== selectedDate,
             key: event.id || index,
           },
-          h('div', { className: 'kumpul-calendar-event-time' }, formatCalendarTime(event.event_date) || 'Acara'),
+          h('div', { className: 'kumpul-calendar-event-time' }, event.timeLabel || formatCalendarTime(event.event_date) || 'Acara'),
           h('div', { className: 'kumpul-calendar-event-copy' },
             h('span', { className: 'kumpul-calendar-event-kind' }, event.typeLabel),
             h('h4', null, event.href
@@ -3930,6 +3989,40 @@ function CalendarSection({ props, section }) {
           className: 'kumpul-calendar-empty',
           hidden: invitations.length > 0,
         }, 'Belum ada undangan. Undangan acara yang dikirim ke akun Anda akan muncul di sini.'),
+      ),
+    ),
+    h('div', {
+      id: 'calendar-panel-services',
+      role: 'tabpanel',
+      'aria-labelledby': 'calendar-tab-services',
+      'data-calendar-panel': 'services',
+      hidden: true,
+    },
+      h('div', { className: 'kumpul-calendar-list', 'data-calendar-list': 'services' },
+        ...services.map((service, index) => h('article', {
+          className: 'kumpul-calendar-card kumpul-calendar-service-card',
+          'data-calendar-service-status': service.status,
+          key: service.id || index,
+        },
+        service.image_url
+          ? h('img', { className: 'kumpul-calendar-service-image', src: service.image_url, alt: '', loading: 'lazy' })
+          : h('span', { className: 'kumpul-calendar-service-image is-empty', 'aria-hidden': 'true' }, h(Icon, { name: 'calendar' })),
+        h('div', { className: 'kumpul-calendar-card-copy' },
+          h('div', { className: 'kumpul-calendar-card-title' },
+            h('h2', null, text(service.title, 'Jasa')),
+            h('span', { className: 'kumpul-calendar-status' }, text(service.status_label, 'Terjadwal')),
+          ),
+          h('p', { className: 'kumpul-calendar-meta' }, serviceScheduleLabel(service)),
+          Number(service.quantity) > 1 ? h('p', { className: 'kumpul-calendar-meta' }, `${Number(service.quantity)} item`) : null,
+        ),
+        service.detail_href
+          ? h('a', { className: 'kumpul-calendar-action', href: service.detail_href }, service.status === 'proposed' ? 'Lanjutkan pesanan' : 'Lihat pesanan')
+          : null,
+        )),
+        h('p', {
+          className: 'kumpul-calendar-empty',
+          hidden: services.length > 0,
+        }, 'Belum ada jadwal jasa. Tanggal layanan yang Anda isi saat memesan jasa akan muncul di sini.'),
       ),
     ),
   );
@@ -4206,7 +4299,7 @@ function styles(colors) {
     @media(max-width:700px){.kumpul-billing-heading{align-items:flex-start;flex-direction:column;gap:16px}.kumpul-billing-summary{width:100%}.kumpul-billing-summary-card{min-width:0;flex:1;padding:11px 13px}.kumpul-billing-summary-card strong{font-size:18px}.kumpul-billing-filters{margin-top:20px}.kumpul-billing-card-top{padding:15px;gap:10px}.kumpul-billing-card h3{font-size:13px}.kumpul-billing-status{max-width:120px;white-space:normal;text-align:center}.kumpul-billing-card-bottom{padding:13px 15px}.kumpul-billing-card-bottom strong{font-size:15px}}
     .kumpul-calendar-agenda:not([open]){display:none}.kumpul-calendar-agenda[open]{position:fixed;inset:50% auto auto 50%;z-index:10;width:min(560px,calc(100vw - 32px));max-height:calc(100dvh - 48px);margin:0;padding:0;display:flex;flex-direction:column;transform:translate(-50%,-50%);overflow:hidden;border:1px solid var(--kt-border);border-radius:22px;background:var(--kt-bg);color:var(--kt-text);box-shadow:0 24px 80px #0f172a45}.kumpul-calendar-agenda::backdrop{background:rgb(15 23 42 / 45%);backdrop-filter:blur(2px)}.kumpul-calendar-agenda-handle{display:none}.kumpul-calendar-agenda-heading{padding:22px 24px 16px;display:flex;align-items:flex-start;justify-content:space-between;gap:16px;border-bottom:1px solid var(--kt-border)}.kumpul-calendar-agenda-heading .kumpul-eyebrow{margin:0 0 4px}.kumpul-calendar-agenda-heading h2{margin:0;font-size:20px;text-transform:capitalize}.kumpul-calendar-agenda-close{width:36px;height:36px;flex:none;border:1px solid var(--kt-border);border-radius:50%;background:var(--kt-surface);color:var(--kt-text);font:inherit;font-size:22px;line-height:1;cursor:pointer}.kumpul-calendar-agenda-content{min-height:0;padding:18px 24px 24px;overflow:auto;overscroll-behavior:contain}.kumpul-calendar-agenda-list{display:grid;gap:10px}.kumpul-calendar-empty{margin:0;padding:18px;border:1px dashed var(--kt-border);border-radius:14px;color:var(--kt-muted);font-size:13px;text-align:center}
     @media(max-width:620px){.kumpul-calendar-agenda[open]{inset:auto 0 0;width:100%;max-width:none;max-height:min(84dvh,720px);padding-bottom:env(safe-area-inset-bottom);transform:none;border-right:0;border-bottom:0;border-left:0;border-radius:22px 22px 0 0}.kumpul-calendar-agenda-handle{width:38px;height:4px;margin:10px auto 0;display:block;border-radius:99px;background:#cbd5e1}.kumpul-calendar-agenda-heading{padding:14px 20px 14px}.kumpul-calendar-agenda-content{padding:16px 20px 22px}.kumpul-calendar-agenda-close{width:34px;height:34px}}
-    .kumpul-calendar-month-toolbar{margin:22px 0 14px;padding:17px 19px;display:flex;align-items:center;justify-content:space-between;gap:16px;border:1px solid var(--kt-border);border-radius:17px;background:var(--kt-surface)}.kumpul-calendar-month-title h2{margin:0;font-size:20px;line-height:1.2;text-transform:capitalize}.kumpul-calendar-month-title p{margin:5px 0 0;color:var(--kt-muted);font-size:11px}.kumpul-calendar-month-actions{display:flex;align-items:center;gap:7px}.kumpul-calendar-month-actions button{min-width:38px;height:38px;padding:7px 11px;border:1px solid var(--kt-border);border-radius:11px;background:var(--kt-surface);color:var(--kt-text);font:inherit;font-size:12px;font-weight:700;cursor:pointer}.kumpul-calendar-month-actions button[data-calendar-previous],.kumpul-calendar-month-actions button[data-calendar-next]{font-size:22px;line-height:1}.kumpul-calendar-month-view{overflow:hidden;border:1px solid var(--kt-border);border-radius:17px;background:var(--kt-surface)}.kumpul-calendar-weekdays,.kumpul-calendar-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr))}.kumpul-calendar-weekdays{border-bottom:1px solid var(--kt-border);background:#f8fbfc}.kumpul-calendar-weekdays span{padding:10px 6px;color:var(--kt-muted);font-size:10px;font-weight:750;text-align:center}.kumpul-calendar-day{position:relative;min-width:0;min-height:77px;padding:9px;display:flex;align-items:flex-start;justify-content:space-between;gap:4px;border:0;border-right:1px solid #e8f0f2;border-bottom:1px solid #e8f0f2;background:var(--kt-surface);color:var(--kt-text);font:inherit;text-align:left;cursor:pointer}.kumpul-calendar-day:nth-child(7n){border-right:0}.kumpul-calendar-day:nth-last-child(-n+7){border-bottom:0}.kumpul-calendar-day:hover{background:#f4fafb}.kumpul-calendar-day[aria-pressed=true]{background:#e6f4f6;box-shadow:inset 0 0 0 2px var(--kt-accent)}.kumpul-calendar-day[data-outside-month=true]{color:#a7b3bd;background:#fbfcfd}.kumpul-calendar-day>span{font-size:11px;font-weight:700}.kumpul-calendar-day small{min-width:19px;height:19px;padding:2px 5px;display:grid;place-items:center;border-radius:999px;background:var(--kt-accent);color:#fff;font-size:9px;font-weight:800}.kumpul-calendar-day:focus-visible,.kumpul-calendar-month-actions button:focus-visible{position:relative;z-index:1;outline:3px solid var(--kt-success);outline-offset:-3px}.kumpul-calendar-agenda{margin-top:24px}.kumpul-calendar-agenda>h3{margin:0 0 12px;font-size:16px;text-transform:capitalize}.kumpul-calendar-event{padding:14px 16px;display:grid;grid-template-columns:76px 1fr;align-items:start;gap:14px;border:1px solid var(--kt-border);border-left:4px solid var(--kt-accent);border-radius:14px;background:var(--kt-surface)}.kumpul-calendar-event[hidden]{display:none}.kumpul-calendar-event-linked{position:relative;transition:border-color .15s,box-shadow .15s}.kumpul-calendar-event-linked:hover,.kumpul-calendar-event-linked:focus-within{border-color:var(--kt-accent);box-shadow:0 8px 22px rgba(15,23,42,.06)}.kumpul-calendar-event-link{color:inherit;text-decoration:none;outline:none}.kumpul-calendar-event-link::after{content:'';position:absolute;inset:0;border-radius:inherit}.kumpul-calendar-event-invitation{border-left-color:var(--kt-success)}.kumpul-calendar-event-time{padding-top:2px;color:var(--kt-accent);font-size:11px;font-weight:800}.kumpul-calendar-event-copy{min-width:0}.kumpul-calendar-event-kind{color:var(--kt-muted);font-size:9px;font-weight:800;letter-spacing:.08em;text-transform:uppercase}.kumpul-calendar-event-copy h4{margin:3px 0 0;font-size:13px}.kumpul-calendar-event-copy p{margin:4px 0 0;color:var(--kt-muted);font-size:10px}
+    .kumpul-calendar-month-toolbar{margin:22px 0 14px;padding:17px 19px;display:flex;align-items:center;justify-content:space-between;gap:16px;border:1px solid var(--kt-border);border-radius:17px;background:var(--kt-surface)}.kumpul-calendar-month-title h2{margin:0;font-size:20px;line-height:1.2;text-transform:capitalize}.kumpul-calendar-month-title p{margin:5px 0 0;color:var(--kt-muted);font-size:11px}.kumpul-calendar-month-actions{display:flex;align-items:center;gap:7px}.kumpul-calendar-month-actions button{min-width:38px;height:38px;padding:7px 11px;border:1px solid var(--kt-border);border-radius:11px;background:var(--kt-surface);color:var(--kt-text);font:inherit;font-size:12px;font-weight:700;cursor:pointer}.kumpul-calendar-month-actions button[data-calendar-previous],.kumpul-calendar-month-actions button[data-calendar-next]{font-size:22px;line-height:1}.kumpul-calendar-month-view{overflow:hidden;border:1px solid var(--kt-border);border-radius:17px;background:var(--kt-surface)}.kumpul-calendar-weekdays,.kumpul-calendar-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr))}.kumpul-calendar-weekdays{border-bottom:1px solid var(--kt-border);background:#f8fbfc}.kumpul-calendar-weekdays span{padding:10px 6px;color:var(--kt-muted);font-size:10px;font-weight:750;text-align:center}.kumpul-calendar-day{position:relative;min-width:0;min-height:77px;padding:9px;display:flex;align-items:flex-start;justify-content:space-between;gap:4px;border:0;border-right:1px solid #e8f0f2;border-bottom:1px solid #e8f0f2;background:var(--kt-surface);color:var(--kt-text);font:inherit;text-align:left;cursor:pointer}.kumpul-calendar-day:nth-child(7n){border-right:0}.kumpul-calendar-day:nth-last-child(-n+7){border-bottom:0}.kumpul-calendar-day:hover{background:#f4fafb}.kumpul-calendar-day[aria-pressed=true]{background:#e6f4f6;box-shadow:inset 0 0 0 2px var(--kt-accent)}.kumpul-calendar-day[data-outside-month=true]{color:#a7b3bd;background:#fbfcfd}.kumpul-calendar-day>span{font-size:11px;font-weight:700}.kumpul-calendar-day small{min-width:19px;height:19px;padding:2px 5px;display:grid;place-items:center;border-radius:999px;background:var(--kt-accent);color:#fff;font-size:9px;font-weight:800}.kumpul-calendar-day:focus-visible,.kumpul-calendar-month-actions button:focus-visible{position:relative;z-index:1;outline:3px solid var(--kt-success);outline-offset:-3px}.kumpul-calendar-agenda{margin-top:24px}.kumpul-calendar-agenda>h3{margin:0 0 12px;font-size:16px;text-transform:capitalize}.kumpul-calendar-event{padding:14px 16px;display:grid;grid-template-columns:76px 1fr;align-items:start;gap:14px;border:1px solid var(--kt-border);border-left:4px solid var(--kt-accent);border-radius:14px;background:var(--kt-surface)}.kumpul-calendar-event[hidden]{display:none}.kumpul-calendar-event-linked{position:relative;transition:border-color .15s,box-shadow .15s}.kumpul-calendar-event-linked:hover,.kumpul-calendar-event-linked:focus-within{border-color:var(--kt-accent);box-shadow:0 8px 22px rgba(15,23,42,.06)}.kumpul-calendar-event-link{color:inherit;text-decoration:none;outline:none}.kumpul-calendar-event-link::after{content:'';position:absolute;inset:0;border-radius:inherit}.kumpul-calendar-event-invitation{border-left-color:var(--kt-success)}.kumpul-calendar-event-service{border-left-color:#b7791f}.kumpul-calendar-service-card{justify-content:flex-start}.kumpul-calendar-service-card .kumpul-calendar-card-copy{flex:1}.kumpul-calendar-service-image{flex:none;width:52px;height:52px;border-radius:13px;object-fit:cover;background:#e6f4f6}.kumpul-calendar-service-image.is-empty{display:grid;place-items:center;color:var(--kt-accent)}.kumpul-calendar-service-card[data-calendar-service-status=proposed] .kumpul-calendar-status{border-color:#f3d9a4;background:#fff8e8;color:#8a5a00}.kumpul-calendar-event-time{padding-top:2px;color:var(--kt-accent);font-size:11px;font-weight:800}.kumpul-calendar-event-copy{min-width:0}.kumpul-calendar-event-kind{color:var(--kt-muted);font-size:9px;font-weight:800;letter-spacing:.08em;text-transform:uppercase}.kumpul-calendar-event-copy h4{margin:3px 0 0;font-size:13px}.kumpul-calendar-event-copy p{margin:4px 0 0;color:var(--kt-muted);font-size:10px}
     @media(max-width:620px){.kumpul-calendar-month-toolbar{padding:13px;align-items:flex-start}.kumpul-calendar-month-title h2{font-size:17px}.kumpul-calendar-month-title p{max-width:170px;font-size:9px}.kumpul-calendar-month-actions{gap:4px}.kumpul-calendar-month-actions button{min-width:33px;height:34px;padding:5px 8px;font-size:10px}.kumpul-calendar-weekdays span{padding:8px 2px;font-size:9px}.kumpul-calendar-day{min-height:55px;padding:6px 5px}.kumpul-calendar-day>span{font-size:10px}.kumpul-calendar-day small{min-width:16px;height:16px;padding:1px 4px;font-size:8px}.kumpul-calendar-event{grid-template-columns:52px 1fr;gap:9px;padding:12px}.kumpul-calendar-event-time{font-size:10px}}
     @media(max-width:620px){.kumpul-calendar-tabs{overflow-x:auto}.kumpul-calendar-tabs button{flex:none;white-space:nowrap}}
     .kumpul-template{--kt-bg:${colors.background};--kt-surface:${colors.surface};--kt-text:${colors.text};--kt-muted:${colors.textMuted};--kt-accent:${colors.accent};--kt-hover:${colors.accentHover};--kt-border:${colors.border};--kt-success:${colors.success};--kt-warning:${colors.warning};min-height:100vh;background:var(--kt-bg);color:var(--kt-text);font:400 15px/1.55 Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
