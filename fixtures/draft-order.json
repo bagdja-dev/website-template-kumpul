@@ -1,0 +1,205 @@
+{
+  "isPreview": false,
+  "websiteSlug": "/toko-contoh",
+  "profile": {
+    "name": "Toko Contoh",
+    "tagline": "Produk pilihan untuk rumah dan gaya hidup",
+    "whatsapp": "6281234567890",
+    "phone": "6281234567890",
+    "socialLinks": {
+      "instagram": "https://instagram.com/tokocontoh"
+    }
+  },
+  "templateTheme": {
+    "colors": {
+      "background": "#F8FAFC",
+      "surface": "#FFFFFF",
+      "text": "#172033",
+      "muted": "#64748B",
+      "accent": "#7A1E48",
+      "onAccent": "#FFFFFF",
+      "border": "#E2E8F0"
+    }
+  },
+  "websiteTheme": {},
+  "pages": [
+    {
+      "slug": "home",
+      "title": "Beranda",
+      "isHome": true,
+      "placement": "header"
+    },
+    {
+      "slug": "tentang",
+      "title": "Tentang Kami",
+      "placement": "header"
+    },
+    {
+      "slug": "faq",
+      "title": "FAQ",
+      "placement": "footer"
+    }
+  ],
+  "auth": {
+    "isLoggedIn": true,
+    "username": "Nadia",
+    "cartHref": "/toko-contoh/cart",
+    "ordersHref": "/toko-contoh/orders",
+    "tagihanHref": "/toko-contoh/tagihan",
+    "calendarHref": "/toko-contoh/calendar",
+    "chatHref": "/toko-contoh/chat",
+    "profileHref": "/toko-contoh/profile",
+    "logoutHref": "/toko-contoh/auth/logout"
+  },
+  "sections": [],
+  "products": [],
+  "categories": [],
+  "locations": [],
+  "faqs": [],
+  "blogPosts": [],
+  "page": {
+    "contractVersion": 1,
+    "currency": "IDR",
+    "timezone": "Asia/Jakarta",
+    "type": "draft_order",
+    "order": {
+      "key": "dOrderKey0000001",
+      "title": "Road Trip Pangandaran",
+      "imageUrl": "https://cdn.bagdja.com/fixtures/road-trip.jpg",
+      "productHref": "/kumpul-demo/products/road-trip-pangandaran",
+      "quantity": 2,
+      "quantityLocked": false,
+      "uomSymbol": "hari",
+      "status": "PENDING",
+      "statusLabel": "Menunggu penawaran",
+      "createdAt": "2026-11-15T10:20:00+07:00",
+      "paymentModeLabel": "Checkout Bagdja",
+      "quotable": true,
+      "awaitingQuote": true,
+      "unitPrice": 250000
+    },
+    "steps": [
+      {
+        "key": "dStepKey0000001",
+        "label": "Detail perjalanan",
+        "description": "Ceritakan rencana perjalanan rombongan.",
+        "state": "done",
+        "filledBy": "buyer",
+        "editable": false,
+        "fields": [
+          {
+            "name": "tujuan",
+            "label": "Tujuan utama",
+            "type": "text",
+            "required": true,
+            "value": "Pantai Pangandaran"
+          },
+          {
+            "name": "peserta",
+            "label": "Jumlah peserta",
+            "type": "number",
+            "required": true,
+            "value": "24"
+          }
+        ]
+      },
+      {
+        "key": "dStepKey0000002",
+        "label": "Jadwal & titik jemput",
+        "description": "Lengkapi jadwal dan lokasi penjemputan.",
+        "state": "current",
+        "filledBy": "buyer",
+        "editable": true,
+        "fields": [
+          {
+            "name": "tanggal_berangkat",
+            "label": "Tanggal berangkat",
+            "type": "tanggal",
+            "required": true,
+            "value": "2026-12-20"
+          },
+          {
+            "name": "jam_jemput",
+            "label": "Jam jemput",
+            "type": "tanggal_waktu",
+            "required": false,
+            "value": "2026-12-20T05:30"
+          },
+          {
+            "name": "titik_jemput",
+            "label": "Titik jemput",
+            "type": "lokasi",
+            "required": true,
+            "value": null
+          },
+          {
+            "name": "armada",
+            "label": "Jenis armada",
+            "type": "select",
+            "required": true,
+            "options": [
+              "Elf",
+              "Bus medium",
+              "Bus besar"
+            ],
+            "value": "Bus medium"
+          },
+          {
+            "name": "catatan",
+            "label": "Catatan tambahan",
+            "type": "textarea",
+            "required": false,
+            "value": null
+          },
+          {
+            "name": "foto_rombongan",
+            "label": "Foto rombongan",
+            "type": "foto",
+            "required": false,
+            "maxFiles": 3,
+            "value": null,
+            "files": [
+              {
+                "url": "https://cdn.bagdja.com/fixtures/rombongan.jpg",
+                "description": "Rombongan kantor"
+              }
+            ]
+          },
+          {
+            "name": "surat_tugas",
+            "label": "Surat tugas (PDF)",
+            "type": "pdf",
+            "required": false,
+            "maxFiles": 1,
+            "value": null,
+            "files": []
+          }
+        ]
+      },
+      {
+        "key": "dStepKey0000003",
+        "label": "Survei & penawaran",
+        "description": "Penjual menyusun penawaran harga.",
+        "state": "locked",
+        "filledBy": "seller",
+        "editable": false,
+        "fields": []
+      }
+    ],
+    "quote": null,
+    "canPay": false,
+    "canCancel": true,
+    "ordersHref": "/kumpul-demo/orders",
+    "actions": [
+      "order.quantity.set",
+      "order.praorder.save",
+      "order.praorder.submit",
+      "order.praorder.upload",
+      "order.praorder.file.remove",
+      "order.draft.pay",
+      "order.draft.cancel",
+      "order.chat.open"
+    ]
+  },
+  "bridgeVersion": 1
+}
