@@ -1315,6 +1315,18 @@ test('draft order with a staged quote shows DP, every termin, the total and pay-
   assert.match(single, /data-bagdja-intent="order.draft.pay"[^>]*>Bayar Rp\s25\.000\.000</);
 });
 
+test('order form & cart confirmations use the Kumpul modal instead of the browser confirm', () => {
+  const draft = html({ ...fixture('draft-order'), page: { ...fixture('draft-order').page, canCancel: true } });
+  assert.match(draft, /data-bagdja-intent="order.praorder.submit"[^>]*data-kumpul-confirm="Kirim data langkah ini\?"[^>]*data-kumpul-confirm-label="Ya, kirim"/);
+  assert.match(draft, /data-bagdja-intent="order.praorder.file.remove"[^>]*data-kumpul-confirm="Hapus file ini\?"[^>]*data-kumpul-confirm-tone="danger"/);
+  assert.match(draft, /data-bagdja-intent="order.draft.cancel"[^>]*data-kumpul-confirm="Batalkan pesanan ini\?"/);
+  // Tidak menandai konfirmasi sebelum pengguna menyetujui modal (client.js yang menambahkannya).
+  assert.doesNotMatch(draft, /data-bagdja-intent="order.praorder.submit"[^>]*data-bagdja-confirmed/);
+  const cart = html(fixture('keranjang'));
+  assert.match(cart, /data-bagdja-intent="cart.remove"[^>]*data-kumpul-confirm="Hapus item dari keranjang\?"/);
+  assert.match(draft, /\.kumpul-confirm-dialog\{/);
+});
+
 test('draft order content announces the cart menu inside the shell', () => {
   const output = html({ ...fixture('draft-order'), contentOnly: true });
   assert.match(output, /data-bagdja-active-nav="[^"]*\bcart\b[^"]*"/);
