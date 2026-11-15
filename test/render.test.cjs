@@ -1171,3 +1171,25 @@ test('client.js mounts per root for the inline host and the whole document elsew
   assert.match(client, /__bagdjaTemplateHost/);
   assert.match(client, /BagdjaTemplateClient/);
 });
+
+// ── Filter section Daftar Produk (tipe + kategori) ───────────────────────────
+
+test('product list section: "all" shows every type and categories narrow the list', () => {
+  const props = fixture('home');
+  const products = props.products.map((product, index) => ({ ...product, type: index === 0 ? 'service' : product.type, categoryId: index === 0 ? 'cat-a' : 'cat-b' }));
+  const escape = (value) => value.replace(/&/g, '&amp;');
+  const first = escape(products[0].name);
+  const second = escape(products[1].name);
+  const withGrid = (content) => ({
+    ...props,
+    products,
+    sections: props.sections.map((section) => section.type === 'products_grid'
+      ? { ...section, content: { ...section.content, ...content } }
+      : section),
+  });
+  const all = html(withGrid({ filter_type: 'all', category_ids: [] }));
+  assert.ok(all.includes(first) && all.includes(second), '"all" shows the service too');
+  const onlyA = html(withGrid({ filter_type: 'all', category_ids: ['cat-a'] }));
+  assert.ok(onlyA.includes(first));
+  assert.ok(!onlyA.includes(second));
+});

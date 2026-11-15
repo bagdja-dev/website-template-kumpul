@@ -3004,10 +3004,18 @@ function Section(props, type) {
   return list(props.sections).find((section) => section?.type === type) || null;
 }
 
+/**
+ * Produk untuk section Daftar Produk: `filter_type` (`all` = semua tipe; tanpa nilai = gathering) dan
+ * `category_ids` (beberapa kategori; kosong = semua).
+ */
 function gatheringProducts(props) {
   const section = Section(props, 'products_grid');
-  const filterType = text(section?.content?.filter_type, 'gathering');
-  return list(props.products).filter((product) => !product.type || product.type === filterType);
+  const rawType = text(section?.content?.filter_type, 'gathering');
+  const filterType = rawType === 'all' ? '' : rawType;
+  const categoryIds = list(section?.content?.category_ids).filter((id) => typeof id === 'string' && id);
+  return list(props.products).filter((product) =>
+    (!filterType || !product.type || product.type === filterType)
+    && (categoryIds.length === 0 || categoryIds.includes(product.categoryId)));
 }
 
 function SectionHeading({ eyebrow, title, description, titleTag = 'h2' }) {
