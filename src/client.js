@@ -968,8 +968,9 @@ import QRCode from 'qrcode';
     const list = cart.querySelector('[data-cart-list]');
     const selectAll = cart.querySelector('[data-cart-select-all]');
     const displayCount = cart.querySelector('[data-cart-display-count]');
-    const selectedCount = cart.querySelector('[data-cart-selected-count]');
-    const selectedTotal = cart.querySelector('[data-cart-selected-total]');
+    // Ringkasan tampil di panel/sheet dan di bar bawah HP → perbarui semua salinannya.
+    const selectedCounts = Array.from(cart.querySelectorAll('[data-cart-selected-count]'));
+    const selectedTotals = Array.from(cart.querySelectorAll('[data-cart-selected-total]'));
     const empty = cart.querySelector('[data-cart-empty]');
     if (!list) return;
 
@@ -1004,8 +1005,8 @@ import QRCode from 'qrcode';
       });
 
       if (displayCount) displayCount.textContent = `(${totalCount} item)`;
-      if (selectedCount) selectedCount.textContent = `${selectedUnits} item`;
-      if (selectedTotal) selectedTotal.textContent = `Rp ${totalAmount.toLocaleString('id-ID')}`;
+      selectedCounts.forEach((node) => { node.textContent = `${selectedUnits} item`; });
+      selectedTotals.forEach((node) => { node.textContent = `Rp ${totalAmount.toLocaleString('id-ID')}`; });
       if (selectAll) {
         selectAll.setAttribute('aria-pressed', String(allSelected));
         selectAll.textContent = allSelected ? 'Batalkan semua' : 'Pilih semua';

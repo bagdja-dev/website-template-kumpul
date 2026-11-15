@@ -619,6 +619,15 @@ test('renders the cart with selection, quantity, unavailable items, and gated ch
   assert.match(html(bridged), /<button type="button" class="kumpul-cart-checkout" data-bagdja-intent="cart\.checkout">Lanjut ke Checkout/);
 });
 
+test('cart on mobile: checkout summary is a bottom sheet opened from a compact bar', () => {
+  const output = html(fixture('keranjang'));
+  assert.match(output, /<input type="checkbox" id="kumpul-cart-summary-toggle" class="kumpul-sheet-toggle"[^>]*><label for="kumpul-cart-summary-toggle" class="kumpul-sheet-backdrop"[^>]*><\/label><aside class="kumpul-cart-summary kumpul-cart-summary-sheet"/);
+  assert.match(output, /class="kumpul-plan-mobile kumpul-compact-bar kumpul-cart-mobile"[\s\S]*?Ringkasan[\s\S]*?data-cart-selected-count=""[\s\S]*?data-cart-selected-total=""[\s\S]*?data-bagdja-intent="cart.checkout"[^>]*>Checkout</);
+  // Sheet & bar ringkas: tinggi sheet dibatasi, tombol bar 38px.
+  assert.match(output, /\.kumpul-cart-summary\.kumpul-cart-summary-sheet\{[^}]*max-height:70vh/);
+  assert.match(output, /\.kumpul-compact-bar \.kumpul-plan-mobilebar-primary button\{min-height:38px/);
+});
+
 test('shows the host-managed message when no cart page data is provided', () => {
   const output = html(withoutPage('keranjang'));
   assert.doesNotMatch(output, /Family Camp Lembang/);
@@ -1261,6 +1270,49 @@ test('draft order date fields use the gathering date picker and numbers show tho
   assert.match(output, /data-kumpul-number-display=""[^>]*value="1\.250\.000,5"|value="1\.250\.000,5"[^>]*data-kumpul-number-display=""/);
   assert.match(output, /type="hidden"[^>]*data-bagdja-field="praorder.anggaran"[^>]*value="1250000\.5"|type="hidden"[^>]*value="1250000\.5"[^>]*data-bagdja-field="praorder.anggaran"/);
   assert.doesNotMatch(output, /type="number"[^>]*data-bagdja-field="praorder\./);
+});
+
+test('draft order: on mobile the price panel is a bottom sheet with a horizontal action bar', () => {
+  const output = html(fixture('draft-order'));
+  // Sheet harga (checkbox + label, tanpa JS) dan bar bawah Ringkasan · Diskusikan · Bayar.
+  assert.match(output, /<input type="checkbox" id="kumpul-draft-price-toggle" class="kumpul-sheet-toggle"/);
+  assert.match(output, /class="kumpul-detail-card kumpul-detail-aside kumpul-draft-aside kumpul-draft-price-sheet"/);
+  assert.match(output, /class="kumpul-plan-mobile kumpul-compact-bar kumpul-draft-mobile"[\s\S]*?for="kumpul-draft-price-toggle"[\s\S]*?Ringkasan[\s\S]*?data-bagdja-intent="order.chat.open"[\s\S]*?Diskusikan[\s\S]*?data-bagdja-intent="order.draft.pay"[^>]*>Menunggu penawaran</);
+  // Tombol langkah sejajar di HP.
+  assert.match(output, /\.kumpul-draft-actions\{flex-direction:row\}/);
+});
+
+test('draft order with a staged quote shows DP, every termin, the total and pay-now amount', () => {
+  const props = fixture('draft-order');
+  props.page.order.awaitingQuote = false;
+  props.page.order.totalAmount = 25000000;
+  props.page.quote = {
+    totalAmount: 25000000,
+    unitPrice: 25000000,
+    quantity: 1,
+    termins: [
+      { label: 'DP 30%', amount: 7500000 },
+      { label: 'Termin 2', amount: 10000000 },
+      { label: 'Pelunasan', amount: 7500000 },
+    ],
+  };
+  props.page.canPay = true;
+  const output = html(props);
+  assert.match(output, /Total penawaran<\/span><strong>Rp\s25\.000\.000/);
+  assert.match(output, /Skema pembayaran/);
+  assert.match(output, /<li class="is-now"><span><b>DP 30%<\/b><small>Dibayar saat checkout<\/small><\/span><strong>Rp\s7\.500\.000/);
+  assert.match(output, /<b>Termin 2<\/b><small>Ditagih kemudian oleh penjual<\/small><\/span><strong>Rp\s10\.000\.000/);
+  assert.match(output, /<b>Pelunasan<\/b>/);
+  assert.match(output, /Bayar sekarang<\/span><strong>Rp\s7\.500\.000/);
+  assert.match(output, />Bayar DP 30% · Rp\s7\.500\.000</);
+  assert.match(output, /data-bagdja-intent="order.draft.pay"[^>]*>Bayar Rp\s7\.500\.000</);
+
+  // Satu kali bayar (tanpa termin) → dibayar penuh saat checkout.
+  props.page.quote = { totalAmount: 25000000, unitPrice: 25000000, quantity: 1, termins: [] };
+  const single = html(props);
+  assert.match(single, /Dibayar penuh saat checkout\./);
+  assert.doesNotMatch(single, /Skema pembayaran/);
+  assert.match(single, /data-bagdja-intent="order.draft.pay"[^>]*>Bayar Rp\s25\.000\.000</);
 });
 
 test('draft order content announces the cart menu inside the shell', () => {
