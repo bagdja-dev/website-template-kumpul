@@ -1132,3 +1132,42 @@ test('reservation and payment steps offer a host refresh button to reload regist
   assert.match(client, /closest\('\[data-bagdja-refresh\]'\)/);
   assert.match(client, /kumpul-restore:/);
 });
+
+// ── Kontrak D8: shell persisten + isi saja ────────────────────────────────────
+
+test('shell renders header, outlet, footer, and bottom nav once, without page content', () => {
+  const props = { ...fixture('home'), shell: true };
+  const output = html(props);
+  assert.match(output, /class="kumpul-template kumpul-shell"/);
+  assert.match(output, /<div class="kumpul-shell-outlet" data-bagdja-outlet="">/);
+  assert.match(output, /class="kumpul-header"/);
+  assert.match(output, /class="kumpul-footer"/);
+  assert.match(output, /class="kumpul-mobile-dock"[^>]*data-bagdja-bottom-nav=""/);
+  assert.match(output, /data-bagdja-nav="page:/, 'page menu links carry a nav key');
+  assert.match(output, /data-bagdja-nav="calendar"/, 'account menu links carry a nav key');
+  assert.doesNotMatch(output, /<main/, 'page content belongs in the outlet, not the shell');
+  assert.doesNotMatch(output, /Kumpul bareng jadi lebih mudah\./);
+});
+
+test('contentOnly renders the page without header, footer, dock, or styles and announces the active menu', () => {
+  const home = html({ ...fixture('home'), contentOnly: true });
+  assert.match(home, /class="kumpul-template kumpul-content-only"/);
+  assert.match(home, /<main class="kumpul-main">/);
+  assert.match(home, /Kumpul bareng jadi lebih mudah\./);
+  assert.doesNotMatch(home, /class="kumpul-header"|class="kumpul-footer"|class="kumpul-mobile-dock"|<style/);
+  assert.match(home, /data-bagdja-active-nav="page:[^"]+"/, 'home page marks the home menu');
+
+  const calendar = html({ ...fixture('calendar'), contentOnly: true });
+  assert.match(calendar, /data-bagdja-active-nav="[^"]*\bcalendar\b[^"]*"/);
+});
+
+test('shell keeps the dock offset for content inside it', () => {
+  const output = html({ ...fixture('home'), shell: true });
+  assert.match(output, /\.kumpul-shell \.kumpul-content-only\{--kumpul-dock-offset:inherit;--kumpul-bar-safe:inherit\}/);
+});
+
+test('client.js mounts per root for the inline host and the whole document elsewhere', () => {
+  const client = readFileSync(path.join(__dirname, '..', 'dist', 'client.js'), 'utf8');
+  assert.match(client, /__bagdjaTemplateHost/);
+  assert.match(client, /BagdjaTemplateClient/);
+});

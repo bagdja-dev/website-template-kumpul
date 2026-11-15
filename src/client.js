@@ -12,20 +12,28 @@ import { Placeholder, UndoRedo } from '@tiptap/extensions';
 import QRCode from 'qrcode';
 
 (() => {
-  const header = document.querySelector('.kumpul-header');
-  if (header) {
+  // Kontrak Bagdja D8: listener `document` (delegasi) dipasang SEKALI; inisialisasi elemen berjalan per root
+  // lewat mount(root) — shell & setiap isi baru di render langsung, atau seluruh dokumen di iframe/SSR.
+  const mountSteps = [];
+  const onMount = (step) => { mountSteps.push(step); };
+
+  onMount((root) => {
+    const header = root.querySelector('.kumpul-header');
+    if (!header) return undefined;
     const updateHeaderHeight = () => {
       document.documentElement.style.setProperty('--kumpul-header-height', `${header.getBoundingClientRect().height}px`);
     };
     updateHeaderHeight();
     if (typeof ResizeObserver === 'function') {
-      new ResizeObserver(updateHeaderHeight).observe(header);
-    } else {
-      window.addEventListener('resize', updateHeaderHeight);
+      const observer = new ResizeObserver(updateHeaderHeight);
+      observer.observe(header);
+      return () => observer.disconnect();
     }
-  }
+    window.addEventListener('resize', updateHeaderHeight);
+    return () => window.removeEventListener('resize', updateHeaderHeight);
+  });
 
-  document.querySelectorAll('input[data-bagdja-field="invitation.banner"]').forEach((input) => {
+  onMount((root) => root.querySelectorAll('input[data-bagdja-field="invitation.banner"]').forEach((input) => {
     const field = input.closest('.kumpul-invite-banner-field');
     const preview = field?.querySelector('[data-invitation-banner-preview]');
     const empty = field?.querySelector('[data-invitation-banner-empty]');
@@ -59,10 +67,10 @@ import QRCode from 'qrcode';
       empty.hidden = Boolean(src);
       if (objectUrl && removeBanner instanceof HTMLInputElement) removeBanner.checked = false;
     });
-  });
+  }));
 
   // Rencana gathering live: tahap yang sudah dilewati bisa dibuka (ringkasan baca saja).
-  document.querySelectorAll('[data-plan-live]').forEach((workflow) => {
+  onMount((root) => root.querySelectorAll('[data-plan-live]').forEach((workflow) => {
     const tabs = Array.from(workflow.querySelectorAll('[data-plan-step-tab]'));
     const panels = Array.from(workflow.querySelectorAll('[data-plan-step-panel]'));
     tabs.forEach((tab) => {
@@ -73,7 +81,7 @@ import QRCode from 'qrcode';
         panels.forEach((panel) => { panel.hidden = panel.dataset.planStepPanel !== step; });
       });
     });
-  });
+  }));
 
   // Tombol "Tolak" yang menunggu konfirmasi popup alasan (dipakai handler klik global di bawah).
   let pendingRejectButton = null;
@@ -94,16 +102,16 @@ import QRCode from 'qrcode';
     }
   };
 
-  document.querySelectorAll('[data-kumpul-reservation-confirm-dialog]').forEach((rejectDialog) => {
+  onMount((root) => root.querySelectorAll('[data-kumpul-reservation-confirm-dialog]').forEach((rejectDialog) => {
     rejectDialog.querySelectorAll('[data-kumpul-reservation-reason-option]').forEach((option) => {
       option.addEventListener('change', () => updateRejectReason(rejectDialog));
     });
     rejectDialog.querySelector('[data-kumpul-reservation-custom-reason]')
       ?.addEventListener('input', () => updateRejectReason(rejectDialog));
     rejectDialog.addEventListener('close', () => { pendingRejectButton = null; });
-  });
+  }));
 
-  document.querySelectorAll('[data-kumpul-reservation-dialog]').forEach((dialog) => {
+  onMount((root) => root.querySelectorAll('[data-kumpul-reservation-dialog]').forEach((dialog) => {
     const filters = Array.from(dialog.querySelectorAll('[data-kumpul-reservation-filter]'));
     const items = Array.from(dialog.querySelectorAll('[data-kumpul-reservation-item]'));
     const filterEmpty = dialog.querySelector('[data-kumpul-reservation-filter-empty]');
@@ -119,11 +127,11 @@ import QRCode from 'qrcode';
         if (filterEmpty) filterEmpty.hidden = matches.length > 0;
       });
     });
-  });
+  }));
 
   // Editor ringan teks undangan (Tiptap): menulis HTML ke textarea `invitation.description`
   // yang dikirim bootstrap Bagdja; API menyanitasi profil `basic` (p, br, strong, em, u, s, ul, ol, li, a).
-  document.querySelectorAll('[data-kumpul-rich-editor]').forEach((field) => {
+  onMount((root) => root.querySelectorAll('[data-kumpul-rich-editor]').forEach((field) => {
     const source = field.querySelector('[data-rich-source]');
     const box = field.querySelector('[data-rich-box]');
     const mount = field.querySelector('[data-rich-content]');
@@ -185,7 +193,7 @@ import QRCode from 'qrcode';
       });
     });
     syncToolbar();
-  });
+  }));
 
   // Pemilih tanggal & jam untuk HP (bottom sheet) — menulis ke input datetime-local asli
   // (`data-bagdja-field`), sehingga intent ke host tidak berubah. Web tetap memakai input bawaan.
@@ -205,7 +213,7 @@ import QRCode from 'qrcode';
     textNode.textContent = label || 'Pilih tanggal & jam';
     trigger.toggleAttribute('data-empty', !label);
   };
-  document.querySelectorAll('[data-kumpul-datetime-trigger]').forEach(syncDateTimeTrigger);
+  onMount((root) => { root.querySelectorAll('[data-kumpul-datetime-trigger]').forEach(syncDateTimeTrigger); });
 
   let dateTimeSheet = null;
   const openDateTimeSheet = (trigger) => {
@@ -305,7 +313,7 @@ import QRCode from 'qrcode';
   });
 
   // Carousel gambar di popup opsi: panah menggeser satu slide, titik mengikuti posisi geser.
-  document.querySelectorAll('[data-option-carousel]').forEach((carousel) => {
+  onMount((root) => root.querySelectorAll('[data-option-carousel]').forEach((carousel) => {
     const track = carousel.querySelector('[data-option-carousel-track]');
     const dots = Array.from(carousel.querySelectorAll('[data-option-carousel-dot]'));
     if (!track) return;
@@ -317,7 +325,7 @@ import QRCode from 'qrcode';
       const active = current();
       dots.forEach((dot, index) => dot.toggleAttribute('data-active', index === active));
     }, { passive: true });
-  });
+  }));
 
   // Image viewer fullscreen: <dialog> modal sendiri agar tampil di atas popup opsi (top layer).
   let imageViewer = null;
@@ -449,10 +457,12 @@ import QRCode from 'qrcode';
     }
   });
   // Setelah reservasi dikirim (status menunggu OTP), sheet kode langsung terbuka di HP.
-  const autoSheet = document.querySelector('[data-kumpul-invite-sheet][data-auto-open-mobile]');
-  if (autoSheet instanceof HTMLDialogElement && window.matchMedia('(max-width: 760px)').matches) {
-    autoSheet.showModal();
-  }
+  onMount((root) => {
+    const autoSheet = root.querySelector('[data-kumpul-invite-sheet][data-auto-open-mobile]');
+    if (autoSheet instanceof HTMLDialogElement && window.matchMedia('(max-width: 760px)').matches) {
+      autoSheet.showModal();
+    }
+  });
 
   // Popup detail pilihan rencana (kartu kategori opsi).
   document.addEventListener('click', (event) => {
@@ -574,7 +584,7 @@ import QRCode from 'qrcode';
   });
 
   // Simulator preview: banner undangan hanya dipratinjau lokal (tidak diunggah).
-  document.querySelectorAll('[data-sim-appearance]').forEach((appearance) => {
+  onMount((root) => root.querySelectorAll('[data-sim-appearance]').forEach((appearance) => {
     const input = appearance.querySelector('[data-sim-banner]');
     const preview = appearance.querySelector('[data-sim-banner-preview]');
     const empty = appearance.querySelector('[data-sim-banner-empty]');
@@ -626,17 +636,27 @@ import QRCode from 'qrcode';
         saved.hidden = false;
       }
     });
-  });
+  }));
 
   // Bottom sheet HP (checkbox + label): tutup dengan Escape dan kunci scroll halaman saat terbuka.
-  const sheetToggles = Array.from(document.querySelectorAll('.kumpul-sheet-toggle'));
+  // Toggle dicari ulang setiap kali (isi halaman bisa berganti tanpa muat ulang dokumen).
+  const sheetToggles = () => Array.from(document.querySelectorAll('.kumpul-sheet-toggle'));
   const syncSheetLock = () => {
-    document.documentElement.classList.toggle('kumpul-sheet-open', sheetToggles.some((toggle) => toggle.checked));
+    document.documentElement.classList.toggle('kumpul-sheet-open', sheetToggles().some((toggle) => toggle.checked));
   };
-  sheetToggles.forEach((toggle) => toggle.addEventListener('change', () => {
-    if (toggle.checked) sheetToggles.forEach((other) => { if (other !== toggle) other.checked = false; });
-    syncSheetLock();
-  }));
+  onMount((root) => {
+    root.querySelectorAll('.kumpul-sheet-toggle').forEach((toggle) => toggle.addEventListener('change', () => {
+      if (toggle.checked) sheetToggles().forEach((other) => { if (other !== toggle) other.checked = false; });
+      syncSheetLock();
+    }));
+    // Popup batal: fokus ke kolom alasan saat dibuka.
+    root.querySelectorAll('.kumpul-sheet-toggle.kumpul-modal-toggle').forEach((toggle) => {
+      toggle.addEventListener('change', () => {
+        if (toggle.checked) toggle.parentElement?.querySelector('.kumpul-modal input[data-bagdja-field]')?.focus();
+      });
+    });
+    return () => syncSheetLock();
+  });
   // Label pembuka sheet/popup (role="button") bisa dipicu keyboard.
   document.addEventListener('keydown', (event) => {
     const label = event.target instanceof Element ? event.target.closest('label[role="button"][for]') : null;
@@ -644,19 +664,13 @@ import QRCode from 'qrcode';
     event.preventDefault();
     label.click();
   });
-  // Popup batal: fokus ke kolom alasan saat dibuka.
-  sheetToggles.filter((toggle) => toggle.classList.contains('kumpul-modal-toggle')).forEach((toggle) => {
-    toggle.addEventListener('change', () => {
-      if (toggle.checked) toggle.parentElement?.querySelector('.kumpul-modal input[data-bagdja-field]')?.focus();
-    });
-  });
   document.addEventListener('keydown', (event) => {
-    if (event.key !== 'Escape' || !sheetToggles.some((toggle) => toggle.checked)) return;
-    sheetToggles.forEach((toggle) => { toggle.checked = false; });
+    if (event.key !== 'Escape' || !sheetToggles().some((toggle) => toggle.checked)) return;
+    sheetToggles().forEach((toggle) => { toggle.checked = false; });
     syncSheetLock();
   });
 
-  document.querySelectorAll('[data-calendar-page]').forEach((calendar) => {
+  onMount((root) => root.querySelectorAll('[data-calendar-page]').forEach((calendar) => {
     const tabs = Array.from(calendar.querySelectorAll('[data-calendar-tab]'));
     const panels = Array.from(calendar.querySelectorAll('[data-calendar-panel]'));
     const description = calendar.querySelector('[data-calendar-description]');
@@ -810,9 +824,9 @@ import QRCode from 'qrcode';
         if (filterEmpty) filterEmpty.hidden = matches.length > 0;
       });
     });
-  });
+  }));
 
-  document.querySelectorAll('[data-billing-page]').forEach((billing) => {
+  onMount((root) => root.querySelectorAll('[data-billing-page]').forEach((billing) => {
     const filters = Array.from(billing.querySelectorAll('[data-billing-filter]'));
     const items = Array.from(billing.querySelectorAll('[data-billing-item]'));
     const countLabel = billing.querySelector('[data-billing-count]');
@@ -834,9 +848,9 @@ import QRCode from 'qrcode';
         if (filterEmpty) filterEmpty.hidden = matchingItems.length > 0 || items.length === 0;
       });
     });
-  });
+  }));
 
-  document.querySelectorAll('[data-transactions-page]').forEach((transactions) => {
+  onMount((root) => root.querySelectorAll('[data-transactions-page]').forEach((transactions) => {
     const filters = Array.from(transactions.querySelectorAll('[data-transaction-filter]'));
     const items = Array.from(transactions.querySelectorAll('[data-transaction-item]'));
     const empty = transactions.querySelector('[data-transactions-empty]');
@@ -856,9 +870,9 @@ import QRCode from 'qrcode';
         if (filterEmpty) filterEmpty.hidden = matchingItems.length > 0 || items.length === 0;
       });
     });
-  });
+  }));
 
-  document.querySelectorAll('[data-cart-page]').forEach((cart) => {
+  onMount((root) => root.querySelectorAll('[data-cart-page]').forEach((cart) => {
     const list = cart.querySelector('[data-cart-list]');
     const selectAll = cart.querySelector('[data-cart-select-all]');
     const displayCount = cart.querySelector('[data-cart-display-count]');
@@ -939,9 +953,9 @@ import QRCode from 'qrcode';
     });
 
     updateSummary();
-  });
+  }));
 
-  document.querySelectorAll('[data-plan-simulator]').forEach((simulator) => {
+  onMount((root) => root.querySelectorAll('[data-plan-simulator]').forEach((simulator) => {
     const stages = ['PLAN', 'INVITATIONS', 'INVITATION_CONFIRMATION', 'PAYMENT_CONFIRMATION'];
     const stepButtons = Array.from(simulator.querySelectorAll('[data-sim-step]'));
     const panels = Array.from(simulator.querySelectorAll('[data-sim-panel]'));
@@ -1390,9 +1404,9 @@ import QRCode from 'qrcode';
       }
     });
     renderStage();
-  });
+  }));
 
-  document.querySelectorAll('[data-gathering-catalog]').forEach((catalog) => {
+  onMount((root) => root.querySelectorAll('[data-gathering-catalog]').forEach((catalog) => {
     const search = catalog.querySelector('[data-gathering-search]');
     const filters = catalog.querySelector('.kumpul-category-filters');
     const results = catalog.querySelector('[data-gathering-results]');
@@ -1464,7 +1478,7 @@ import QRCode from 'qrcode';
       updateResults();
     });
     updateResults();
-  });
+  }));
 
   // Muat ulang (data-bagdja-refresh): host mengganti dokumen iframe bila data berubah. window.name
   // bertahan antar-dokumen di iframe yang sama, jadi dialog reservasi & tab filternya dipulihkan.
@@ -1483,13 +1497,16 @@ import QRCode from 'qrcode';
       // window.name tidak tersedia → cukup refresh tanpa memulihkan dialog.
     }
   }, true);
-  try {
-    if (typeof window.name === 'string' && window.name.startsWith(RESTORE_PREFIX)) {
+  // Pulihkan dialog setelah muat ulang/refresh data. Dihapus hanya oleh root yang memuat dialognya (shell
+  // dipasang lebih dulu daripada isi di render langsung).
+  onMount((root) => {
+    try {
+      if (typeof window.name !== 'string' || !window.name.startsWith(RESTORE_PREFIX)) return;
       const restore = JSON.parse(window.name.slice(RESTORE_PREFIX.length));
+      const dialogId = typeof restore?.dialog === 'string' && /^kumpul-[a-z-]{1,40}$/.test(restore.dialog) ? restore.dialog : '';
+      const dialog = dialogId ? root.querySelector(`#${dialogId}`) : null;
+      if (!dialog && root !== document) return;
       window.name = '';
-      const dialog = typeof restore?.dialog === 'string' && /^kumpul-[a-z-]{1,40}$/.test(restore.dialog)
-        ? document.getElementById(restore.dialog)
-        : null;
       if (dialog instanceof HTMLDialogElement && dialog.matches('[data-kumpul-reservation-dialog]')) {
         const filter = typeof restore.filter === 'string' && /^[A-Z_]{1,40}$/.test(restore.filter)
           ? dialog.querySelector(`[data-kumpul-reservation-filter="${restore.filter}"]`)
@@ -1497,8 +1514,17 @@ import QRCode from 'qrcode';
         if (filter instanceof HTMLElement) filter.click();
         if (!dialog.open) dialog.showModal();
       }
+    } catch {
+      window.name = '';
     }
-  } catch {
-    window.name = '';
-  }
+  });
+
+  const mountRoot = (root) => {
+    const cleanups = mountSteps.map((step) => step(root)).filter((cleanup) => typeof cleanup === 'function');
+    return () => cleanups.forEach((cleanup) => cleanup());
+  };
+  // Render langsung oleh Bagdja (D8): host memanggil mount untuk shell & setiap isi halaman.
+  // Iframe/SSR: seluruh dokumen adalah satu root, dipasang sekarang (perilaku lama).
+  if (window.__bagdjaTemplateHost === 'inline') window.BagdjaTemplateClient = { mount: mountRoot };
+  else mountRoot(document);
 })();

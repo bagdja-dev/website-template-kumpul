@@ -3018,17 +3018,48 @@ function SectionHeading({ eyebrow, title, description, titleTag = 'h2' }) {
   );
 }
 
+/** Menu halaman di header (maks. 5, tanpa halaman khusus footer). */
+function headerPages(props) {
+  return list(props.pages).filter((page) => page.placement !== 'footer').slice(0, 5);
+}
+
+/** Halaman menu yang aktif untuk activePageSlug (katalog/tentang/cara kerja dicocokkan dari slug/judul). */
+function activeHeaderPage(pages, activePageSlug) {
+  return pages.find((page) => {
+    const identity = `${page.slug} ${page.title}`.toLocaleLowerCase('id-ID');
+    if (activePageSlug === 'gathering') return /gather|event|katalog/.test(identity);
+    if (activePageSlug === 'about') return /about|tentang/.test(identity);
+    if (activePageSlug === 'how-it-works') return /cara|how|flow/.test(identity);
+    return false;
+  });
+}
+
+/** Kunci `data-bagdja-nav` menu akun (shell persisten, kontrak D8). */
+const ACCOUNT_NAV_KEYS = { Keranjang: 'cart', Tagihan: 'tagihan', Transaksi: 'orders', Kalender: 'calendar', Inbox: 'chat', Profil: 'profile' };
+
+/** Menu akun yang aktif untuk activePageSlug (detail ikut menu induknya). */
+function activeAccountLabel(activePageSlug) {
+  if (activePageSlug === 'calendar') return 'Kalender';
+  if (activePageSlug === 'tagihan' || activePageSlug === 'invoice-detail') return 'Tagihan';
+  if (activePageSlug === 'orders' || activePageSlug === 'transaction-detail') return 'Transaksi';
+  if (activePageSlug === 'cart' || activePageSlug === 'plan-detail') return 'Keranjang';
+  return null;
+}
+
+/** Kunci menu aktif untuk isi halaman (`data-bagdja-active-nav`) — shell menandai menu tanpa render ulang. */
+function activeNavKeys(props, activePageSlug) {
+  const pages = headerPages(props);
+  const page = activeHeaderPage(pages, activePageSlug)
+    || (!activePageSlug ? pages.find((item) => item.isHome) : null);
+  const account = activeAccountLabel(activePageSlug);
+  return [page ? `page:${page.slug}` : null, account ? ACCOUNT_NAV_KEYS[account] : null].filter(Boolean);
+}
+
 function Header(props) {
   const profile = props.profile || {};
   const auth = props.auth || {};
-  const pages = list(props.pages).filter((page) => page.placement !== 'footer').slice(0, 5);
-  const activePage = pages.find((page) => {
-    const identity = `${page.slug} ${page.title}`.toLocaleLowerCase('id-ID');
-    if (props.activePageSlug === 'gathering') return /gather|event|katalog/.test(identity);
-    if (props.activePageSlug === 'about') return /about|tentang/.test(identity);
-    if (props.activePageSlug === 'how-it-works') return /cara|how|flow/.test(identity);
-    return false;
-  });
+  const pages = headerPages(props);
+  const activePage = activeHeaderPage(pages, props.activePageSlug);
   const accountLinks = [
     ['Keranjang', auth.cartHref, 'cart'],
     ['Tagihan', auth.tagihanHref, 'receipt'],
@@ -3056,12 +3087,8 @@ function Header(props) {
             key: label,
             'aria-label': label,
             title: label,
-            'aria-current': (
-              props.activePageSlug === 'calendar' && label === 'Kalender'
-              || (props.activePageSlug === 'tagihan' || props.activePageSlug === 'invoice-detail') && label === 'Tagihan'
-              || (props.activePageSlug === 'orders' || props.activePageSlug === 'transaction-detail') && label === 'Transaksi'
-              || (props.activePageSlug === 'cart' || props.activePageSlug === 'plan-detail') && label === 'Keranjang'
-            ) ? 'page' : undefined,
+            'data-bagdja-nav': ACCOUNT_NAV_KEYS[label],
+            'aria-current': activeAccountLabel(props.activePageSlug) === label ? 'page' : undefined,
           }, h(Icon, { name: icon }), h('span', null, label)),
         ),
         !auth.isLoggedIn && auth.loginHref
@@ -3075,6 +3102,7 @@ function Header(props) {
           h('a', {
             href: tenantPath(props, page.isHome ? '/' : `/${encodeURIComponent(page.slug)}`),
             key: page.slug,
+            'data-bagdja-nav': `page:${page.slug}`,
             'aria-current': activePage
               ? page.slug === activePage.slug ? 'page' : undefined
               : props.activePageSlug ? undefined : page.isHome ? 'page' : undefined,
@@ -3870,16 +3898,13 @@ function MobileDock(props) {
   ].filter(([, href]) => typeof href === 'string' && href.length > 0);
 
   if (!links.length) return null;
-  return h('nav', { className: 'kumpul-mobile-dock', 'aria-label': 'Menu akun' },
+  return h('nav', { className: 'kumpul-mobile-dock', 'aria-label': 'Menu akun', 'data-bagdja-bottom-nav': '' },
     ...links.map(([label, href, icon]) => h('a', {
       href,
       key: label,
       'aria-label': label,
-      'aria-current': (
-        (props.activePageSlug === 'tagihan' || props.activePageSlug === 'invoice-detail') && label === 'Tagihan'
-        || (props.activePageSlug === 'orders' || props.activePageSlug === 'transaction-detail') && label === 'Transaksi'
-        || (props.activePageSlug === 'cart' || props.activePageSlug === 'plan-detail') && label === 'Keranjang'
-      ) ? 'page' : undefined,
+      'data-bagdja-nav': ACCOUNT_NAV_KEYS[label],
+      'aria-current': activeAccountLabel(props.activePageSlug) === label && label !== 'Kalender' ? 'page' : undefined,
     },
       h(Icon, { name: icon }), h('span', null, label),
     )),
@@ -3961,6 +3986,7 @@ function styles(colors) {
     @media(max-width:760px){.kumpul-invite-share{grid-template-columns:1fr}.kumpul-invite-appearance-grid{grid-template-columns:1fr}.kumpul-invite-appearance-actions button{width:100%}.kumpul-plan-live .kumpul-plan-desktop-actions,.kumpul-plan-desktop-only{display:none}.kumpul-plan-detail{padding-bottom:calc(72px + var(--kumpul-dock-offset))}.kumpul-plan-mobile{display:block}.kumpul-plan-mobilebar{position:fixed;z-index:20;right:0;bottom:var(--kumpul-dock-offset);left:0;padding:8px 12px calc(8px + var(--kumpul-bar-safe));display:flex;align-items:center;gap:6px;border-top:1px solid var(--kt-border);background:#fffffff5;box-shadow:0 -6px 18px #0f172a0f;backdrop-filter:blur(14px)}.kumpul-plan-mobilebar-icon{flex:none;width:54px;min-height:44px;display:grid;align-content:center;justify-items:center;gap:2px;border-radius:10px;color:var(--kt-text);font-size:8px;font-weight:700;cursor:pointer;-webkit-tap-highlight-color:transparent}.kumpul-plan-mobilebar-icon:active{background:var(--kt-surface)}.kumpul-plan-mobilebar-icon .kumpul-icon{width:20px;height:20px}.kumpul-plan-mobilebar-primary{min-width:0;flex:1;display:flex}.kumpul-plan-mobilebar-primary button{min-width:0;min-height:44px;flex:1;padding:8px 12px;border:1px solid var(--kt-accent);border-radius:11px;background:var(--kt-accent);color:#fff;font:inherit;font-size:10px;font-weight:800;line-height:1.25;cursor:pointer}.kumpul-plan-mobilebar-primary button:disabled{opacity:.5;cursor:not-allowed}.kumpul-sheet-backdrop{position:fixed;z-index:40;inset:0;display:block;background:#0f172a6b;opacity:0;pointer-events:none;transition:opacity .2s ease}.kumpul-sheet-toggle:checked+.kumpul-sheet-backdrop{opacity:1;pointer-events:auto}.kumpul-sheet,.kumpul-plan-layout.kumpul-plan-summary-sheet{position:fixed;z-index:41;right:0;bottom:0;left:0;max-height:85vh;margin:0;padding:0 16px calc(16px + env(safe-area-inset-bottom,0px));display:block;overflow-y:auto;overscroll-behavior:contain;border-radius:18px 18px 0 0;background:var(--kt-bg);box-shadow:0 -12px 32px #0f172a2e;visibility:hidden;transform:translateY(105%);transition:transform .25s ease,visibility .25s}.kumpul-sheet-toggle:checked~.kumpul-sheet,.kumpul-sheet-toggle:checked~.kumpul-plan-summary-sheet{visibility:visible;transform:none}.kumpul-plan-summary-sheet .kumpul-plan-main{display:grid;gap:13px}.kumpul-plan-summary-sheet .kumpul-plan-main>.kumpul-detail-card:first-child>h2{display:none}.kumpul-plan-summary-sheet .kumpul-plan-aside{margin-top:13px}.kumpul-sheet-head{position:sticky;z-index:1;top:0;margin:0 -16px 12px;padding:18px 16px 10px;display:flex;align-items:center;justify-content:space-between;gap:12px;border-bottom:1px solid var(--kt-border);background:var(--kt-bg)}.kumpul-sheet-head:before{content:'';position:absolute;top:7px;left:50%;width:36px;height:4px;margin-left:-18px;border-radius:2px;background:var(--kt-border)}html.kumpul-sheet-open,html:has(.kumpul-sheet-toggle:checked){overflow:hidden}}
     @media(max-width:620px){.kumpul-template:has(.kumpul-mobile-dock){--kumpul-dock-offset:max(54px,calc(45px + env(safe-area-inset-bottom,0px)));--kumpul-bar-safe:0px}}
     @media(prefers-reduced-motion:reduce){.kumpul-template *{scroll-behavior:auto!important;transition:none!important}}
+    .kumpul-shell .kumpul-content-only{--kumpul-dock-offset:inherit;--kumpul-bar-safe:inherit}.kumpul-shell-outlet{min-height:calc(100dvh - var(--kumpul-header-height,0px))}
   `;
 }
 
@@ -3969,6 +3995,22 @@ function render(inputProps = {}) {
   const props = kumpulPage ? { ...inputProps, kumpulPage } : inputProps;
   const colors = themeColors(props);
   const sections = list(props.sections);
+
+  // Shell persisten (kontrak D8): header, footer, dan navigasi bawah dirender SEKALI oleh host; isi halaman
+  // (halaman Kumpul maupun halaman Bagdja) dipasang host ke [data-bagdja-outlet] dan berganti tanpa render ulang.
+  if (props.shell === true) {
+    const profile = props.profile || {};
+    return h('div', { className: 'kumpul-template kumpul-shell' },
+      h('style', { dangerouslySetInnerHTML: { __html: styles(colors) } }),
+      h(Header, { ...props, activePageSlug: '' }),
+      h('div', { className: 'kumpul-shell-outlet', 'data-bagdja-outlet': '' }),
+      h('footer', { className: 'kumpul-footer' },
+        h('strong', null, text(profile.name, 'Kumpul')),
+        h('span', null, text(profile.tagline, 'Tempat cerita dan kebersamaan dimulai.')),
+      ),
+      h(MobileDock, { ...props, activePageSlug: '' }),
+    );
+  }
 
   // Header saja untuk halaman yang isinya masih dikelola Bagdja (mis. chat, checkout).
   if (props.headerOnly === true) {
@@ -4015,10 +4057,7 @@ function render(inputProps = {}) {
   const cta = Section(props, 'cta');
   const profile = props.profile || {};
 
-  return h('div', { className: 'kumpul-template' },
-    h('style', { dangerouslySetInnerHTML: { __html: styles(colors) } }),
-    h(Header, { ...props, activePageSlug }),
-    h('main', { className: 'kumpul-main' },
+  const main = h('main', { className: 'kumpul-main' },
       hero ? h(Hero, { ...props, section: hero }) : null,
       sections.filter((section) => section?.type === 'about').map((section) => h(AboutSection, { ...section, key: section.id || 'about' })),
       features ? h(FeaturesSection, features) : null,
@@ -4046,7 +4085,20 @@ function render(inputProps = {}) {
           h('p', null, 'Tambahkan section melalui editor website untuk mulai menampilkan konten.'),
         )
         : null,
-    ),
+  );
+
+  // Isi saja di dalam shell (D8): gaya sudah dimuat shell; menu aktif diumumkan lewat data-bagdja-active-nav.
+  if (props.contentOnly === true) {
+    return h('div', {
+      className: 'kumpul-template kumpul-content-only',
+      'data-bagdja-active-nav': activeNavKeys(props, activePageSlug).join(' '),
+    }, main);
+  }
+
+  return h('div', { className: 'kumpul-template' },
+    h('style', { dangerouslySetInnerHTML: { __html: styles(colors) } }),
+    h(Header, { ...props, activePageSlug }),
+    main,
     h('footer', { className: 'kumpul-footer' },
       h('strong', null, text(profile.name, 'Kumpul')),
       h('span', null, text(profile.tagline, 'Tempat cerita dan kebersamaan dimulai.')),
